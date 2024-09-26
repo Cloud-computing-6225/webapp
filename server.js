@@ -22,7 +22,7 @@ app.use(express.json({ type: "*/*" }));
 
 // API to handle get request
 app.get("/healthz", async (req, res) => {
-  if (req.body && Object.keys(req.body).length > 0) {
+  if ((req.body && Object.keys(req.body).length > 0) || Object.keys(req.query).length > 0) {
     return res
       .status(400)
       .set({
