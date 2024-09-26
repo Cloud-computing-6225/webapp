@@ -7,13 +7,13 @@
 
 2. **Set Up Environment Variables**  
    Create a `.env` file in the root directory of your project and set up the following variables:
-DB_NAME=<Your Database Name>
-DB_USER=<Your Database Username>
-DB_PASSWORD=<Your Database Password>
-DB_HOST=<Your Database Host, e.g., localhost>
-DB_PORT=<Your Database Port, e.g., 5432 for PostgreSQL>
-DB_DIALECT=<Your Database Dialect, e.g., postgres, mysql>
-PORT=<Port for your application to run, e.g., 3000>
+DB_NAME='Database Name'
+DB_USER='Your Database Username'
+DB_PASSWORD='Your Database Password'
+DB_HOST='Your Database Host, e.g., localhost'
+DB_PORT='Your Database Port, e.g., 5432 for PostgreSQL'
+DB_DIALECT='Your Database Dialect, e.g., postgres, mysql'
+PORT='Port for your application to run, e.g., 3000'
 
 
 
