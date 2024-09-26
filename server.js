@@ -3,6 +3,8 @@ const Sequelize = require("sequelize");
 const dotenv = require("dotenv");
 dotenv.config();
 
+
+// Creating a Sequelize object with all parameters
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
@@ -18,6 +20,7 @@ const app = express();
 
 app.use(express.json({ type: "*/*" }));
 
+// API to handle get request
 app.get("/healthz", async (req, res) => {
   if (req.body && Object.keys(req.body).length > 0) {
     return res
@@ -49,6 +52,7 @@ app.get("/healthz", async (req, res) => {
   }
 });
 
+// API to handle post, put, delete, patch
 app.all("/healthz", async (req, res) => {
   return res
     .status(405)
