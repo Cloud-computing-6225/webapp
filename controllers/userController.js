@@ -32,12 +32,13 @@ const registerUser = async (req, res) => {
     return res.status(400).end();
   }
 
-  const existingUser = await User.findOne({ where: { email: email } });
-
-  if (existingUser) {
-    return res.status(400).end();
-  }
+ 
   try {
+    const existingUser = await User.findOne({ where: { email: email } });
+
+    if (existingUser) {
+      return res.status(400).end();
+    }
     const user = await User.create({ email, firstName, lastName, password });
     return res.status(201).json({
       id: user.id,
