@@ -1,24 +1,43 @@
 const express = require("express");
-const Sequelize = require("sequelize");
+// const Sequelize = require("sequelize");
 const dotenv = require("dotenv");
+const userRoutes=require('./routes/userRoutes')
+const sequelize=require('./config/database')
+
 dotenv.config();
 
 
 // Creating a Sequelize object with all parameters
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    dialect: process.env.DB_DIALECT,
-    port: process.env.DB_PORT,
-  }
-);
+// const sequelize = new Sequelize(
+//   process.env.DB_NAME,
+//   process.env.DB_USER,
+//   process.env.DB_PASSWORD,
+//   {
+//     host: process.env.DB_HOST,
+//     dialect: process.env.DB_DIALECT,
+//     port: process.env.DB_PORT,
+//   }
+// );
 
 const app = express();
 
 app.use(express.json({ type: "*/*" }));
+
+app.use(userRoutes)
+
+app.head("/healthz", (req, res, next) => {
+ 
+    return res
+      .status(405)
+      .set({
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      })
+      .end()
+
+});
+
+
 
 // API to handle get request
 app.get("/healthz", async (req, res) => {
@@ -63,6 +82,22 @@ app.all("/healthz", async (req, res) => {
     .end();
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server is running on port ${process.env.PORT}`);
+// Catch any path parameters for /healthz
+app.all("/healthz/*", (req, res) => {
+  console.log('path params')
+  return res.status(400).end();
+});
+
+
+
+// app.listen(process.env.PORT, () => {
+//   console.log(`Server is running on port ${process.env.PORT}`);
+// });
+
+sequelize.sync().then(() => {
+  app.listen(process.env.PORT, () => {
+    console.log(`Server is running on port ${process.env.PORT}}`);
+  });
+}).catch(error => {
+  console.error('Unable to connect to the database:', error);
 });
