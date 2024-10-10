@@ -12,48 +12,54 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:latest
+        ports:
+          - ${{ secrets.DB_PORT }}:${{ secrets.DB_PORT }} 
+        env:
+          MYSQL_DATABASE: ${{ secrets.DB_NAME }}
+          MYSQL_USER: ${{ secrets.DB_USER }}
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        options: > 
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-    # services:
-    #   mysql:
-    #     image: mysql:latest
-    #     ports:
-    #       - 3306:3306
-    #     env:
-    #       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-    #       MYSQL_DATABASE: ${{ secrets.MYSQL_DB }}
-    #       MYSQL_USER: ${{ secrets.MYSQL_USER }}
-    #       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-    #     options: > 
-    #       --health-cmd="mysqladmin ping --silent"
-    #       --health-interval=10s
-    #       --health-timeout=5s
-    #       --health-retries=5
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
 
-    # steps:
-    #   - name: Checkout code
-    #     uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm install
 
-    #   - name: Set up Node.js
-    #     uses: actions/setup-node@v3
-    #     with:
-    #       node-version: '16'
+      - name: Set environment variables for database
+        run: |
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_DIALECT=${{ secrets.DB_DIALECT }}" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
 
-    #   - name: Install dependencies
-    #     run: npm install
+      - name: Wait for MySQL to be ready
+        run: |
+          echo "Waiting for MySQL..."
+          while ! mysqladmin ping --host=${{ secrets.DB_HOST }} --port=${{ secrets.DB_PORT }} --silent; do
+            echo "Waiting for database connection"
+            sleep 2
+          done
 
-    #   - name: Set environment variables for database
-    #     run: |
-    #       echo "DB_HOST=127.0.0.1" >> .env
-    #       echo "DB_USER=${{ secrets.MYSQL_USER }}" >> .env
-    #       echo "DB_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
-    #       echo "DB_NAME=${{ secrets.MYSQL_DB }}" >> .env
+      - name: Run Migrations 
+        run: |
+          npx sequelize-cli db:migrate
 
-    #   - name: Run Migrations (if necessary)
-    #     run: |
-    #       npx sequelize-cli db:migrate
-
-    #   - name: Run Tests
-    #     run: npm test
+      - name: Run Tests
+        run: npm test
