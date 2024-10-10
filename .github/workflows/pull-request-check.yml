@@ -22,7 +22,8 @@ jobs:
           MYSQL_DATABASE: ${{ secrets.DB_NAME }}                              
           MYSQL_USER: ${{ secrets.DB_USER }}                                    
           MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
-  
+
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -46,6 +47,7 @@ jobs:
             sleep 15
           done
   
+          
       - name: Running my tests
         env:
           DB_HOST: ${{ secrets.DB_HOST }}

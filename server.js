@@ -29,7 +29,7 @@ app.head("/healthz", (req, res, next) => {
 
 
 
-// API to handle get request
+// API to handle the get request
 app.get("/healthz", async (req, res) => {
   if ((req.body && Object.keys(req.body).length > 0) || Object.keys(req.query).length > 0) {
     return res
