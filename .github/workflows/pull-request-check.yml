@@ -12,10 +12,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
  
-    # env:
-    #   DB_NAME: ${{ secrets.DB_NAME }}
-    #   DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-    #   DB_USER: ${{secrets.DB_USER }}
+    env:
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_USER: ${{secrets.DB_USER }}
 
     steps:
       - name: Checkout code
