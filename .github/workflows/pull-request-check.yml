@@ -1,0 +1,59 @@
+name: Continuous Integration workflow
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+    # services:
+    #   mysql:
+    #     image: mysql:latest
+    #     ports:
+    #       - 3306:3306
+    #     env:
+    #       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+    #       MYSQL_DATABASE: ${{ secrets.MYSQL_DB }}
+    #       MYSQL_USER: ${{ secrets.MYSQL_USER }}
+    #       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+    #     options: > 
+    #       --health-cmd="mysqladmin ping --silent"
+    #       --health-interval=10s
+    #       --health-timeout=5s
+    #       --health-retries=5
+
+    # steps:
+    #   - name: Checkout code
+    #     uses: actions/checkout@v3
+
+    #   - name: Set up Node.js
+    #     uses: actions/setup-node@v3
+    #     with:
+    #       node-version: '16'
+
+    #   - name: Install dependencies
+    #     run: npm install
+
+    #   - name: Set environment variables for database
+    #     run: |
+    #       echo "DB_HOST=127.0.0.1" >> .env
+    #       echo "DB_USER=${{ secrets.MYSQL_USER }}" >> .env
+    #       echo "DB_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
+    #       echo "DB_NAME=${{ secrets.MYSQL_DB }}" >> .env
+
+    #   - name: Run Migrations (if necessary)
+    #     run: |
+    #       npx sequelize-cli db:migrate
+
+    #   - name: Run Tests
+    #     run: npm test
