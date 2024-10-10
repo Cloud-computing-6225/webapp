@@ -14,38 +14,30 @@ jobs:
  
     env:
       DB_NAME: ${{ secrets.DB_NAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
  
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
- 
-    - name: Set up MySQL
-      run: |
-        sudo apt update
-        sudo apt install -y mysql-server
-        sudo systemctl start mysql
-
-        # Step 1: Create the MySQL database (using root)
-        sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;"
- 
-    - name: Install npm dependencies
-      run: npm install
- 
-    - name: Install express dependencies
-      run: npm install express
- 
-    - name: Install bcrypt and Sequelize dependencies
-      run: |
-        npm install bcrypt
-        npm install sequelize mysql2
-        npm install sequelize-cli --save-dev
- 
-    - name: Set up MySQL database with Sequelize
-      run: |
-        npx sequelize-cli db:create
+      - name: Checkout code
+        uses: actions/checkout@v3
     
-    - name: Install Jest dependencies
-      run: npm install --save-dev jest
- 
-    - name: Run Jest tests
-      run: npm test
+      - name: Set up MySQL
+        run: |
+          sudo apt update
+          sudo apt install -y mysql-server
+          sudo systemctl start mysql
+          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '${{ secrets.DB_PASSWORD }}';"
+          sudo mysql -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};"
+        
+      - name: Set up Node.js using GitHub Action
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+    
+      - name: Install npm dependencies
+        run: npm ci
+    
+      - name: Run Sequelize migrations
+        run: npx sequelize-cli db:migrate
+    
+      - name: Run tests
+        run: npm test -- --exit
