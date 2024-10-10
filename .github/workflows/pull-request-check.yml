@@ -29,9 +29,15 @@ jobs:
         sudo apt update
         sudo apt install -y mysql-server
         sudo systemctl start mysql
-        sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};"
+
+        # Step 1: Create the MySQL user
         sudo mysql -u root -e "CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'localhost' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';"
-        sudo mysql -u root -e "GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }}'@'localhost';"
+    
+        # Step 2: Create the MySQL database
+        sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;"
+    
+        # Step 3: Grant privileges to the user on the database
+        sudo mysql -u root -e "GRANT ALL PRIVILEGES ON \`${{ secrets.DB_NAME }}\`.* TO '${{ secrets.DB_USER }}'@'localhost';"
         sudo mysql -u root -e "FLUSH PRIVILEGES;"
  
     - name: Install npm dependencies
