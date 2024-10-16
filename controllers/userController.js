@@ -6,7 +6,7 @@ const registerUser = async (req, res) => {
   const { firstName, lastName, password, email } = req.body;
   console.log("Inside");
   if (!firstName || !lastName || !email || !password) {
-    return res.status(400).end();
+    return res.status(500).end();
   }
   
 
