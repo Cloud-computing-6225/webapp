@@ -49,7 +49,7 @@ variable "port" {
 variable "ami_users" {
   type = list(string)
 }
-ii8jb
+
 
 
 
@@ -78,6 +78,9 @@ source "amazon-ebs" "my-ami" {
     volume_size           = 8
     volume_type           = "gp2"
   }
+
+  #variable here to grant access to specified accounts
+  ami_users = var.ami_users
 }
 
 build {
