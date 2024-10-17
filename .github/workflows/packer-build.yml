@@ -36,7 +36,8 @@ jobs:
             echo "Waiting for MySQL..."
             sleep 15
           done
-
+      - name: Install dependencies
+        run: npm install
       # Step 3: Running my tests
       - name: Running my tests
         env:
