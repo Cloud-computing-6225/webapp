@@ -1,4 +1,4 @@
-name: Build and Deploy Custom Image
+name: Build, Test, and Deploy Custom Image
 
 on:
   push:
@@ -8,12 +8,46 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.DB_NAME }}                              
+          MYSQL_USER: ${{ secrets.DB_USER }}                                    
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
     steps:
       # Step 1: Checkout the repository to get the webapp and packer folder
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Build the application artifact (zip)
+      # Step 2: MySQL Health Check
+      - name: Check for SQL to be healthy
+        run: |
+          for i in `seq 1 30`; do
+            if echo "SELECT 1" | mysql -h 127.0.0.1 -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_NAME }} ; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 15
+          done
+
+      # Step 3: Running my tests
+      - name: Running my tests
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: 3306
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER}}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: npm test
+
+      # Step 4: Build the application artifact (zip)
       - name: Build Application Artifact
         run: |
           zip -r app.zip . -x ".git/*" -x ".github/*"  # Creates the artifact
@@ -21,33 +55,33 @@ jobs:
         env:
           NODE_ENV: production
 
-      # Step 3: Upload the artifact to GitHub Actions
+      # Step 5: Upload the artifact to GitHub Actions
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: app.zip  # This artifact will be passed to the Packer build
           path: app.zip
 
-      # Step 4: Download the built application artifact
+      # Step 6: Download the built application artifact
       - name: Download Application Artifact
         uses: actions/download-artifact@v3
         with:
           name: app.zip
 
-      # Step 5: Move the artifact to the Packer folder
+      # Step 7: Move the artifact to the Packer folder
       - name: Move Artifact to Packer Folder
         run: |
           ls -al
           mv app.zip ./packer/  # Move the zipped artifact to the correct folder
 
-      # Step 6: Set up Packer
+      # Step 8: Set up Packer
       - name: Set up Packer
         uses: hashicorp/setup-packer@main
         id: setup
         with:
           version: 1.11.2
 
-      # Step 7: Run Packer to build the custom image
+      # Step 9: Run Packer to build the custom image
       - name: Run Packer
         working-directory: ./packer  # Ensure we are in the correct directory where the Packer files are
         run: |
@@ -65,5 +99,6 @@ jobs:
                        -var "db_name=${{ secrets.DB_NAME }}" \
                        -var "db_user=${{ secrets.DB_USER }}" \
                        -var "db_password=${{ secrets.DB_PASSWORD }}" \
+                       -var 'ami_users=${{ secrets.AMI_USERS }}' \
                        -var "port=${{ secrets.PORT }}" \
                        aws.pkr.hcl
