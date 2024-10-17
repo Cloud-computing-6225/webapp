@@ -22,6 +22,32 @@ variable "ssh_username" {
   default = "ubuntu"
 }
 
+variable "db_host" {
+  type    = string
+  default = "default_db_host" # Fallback value
+}
+
+variable "db_name" {
+  type    = string
+  default = "default_db_name"
+}
+
+variable "db_user" {
+  type    = string
+  default = "default_db_user"
+}
+
+variable "db_password" {
+  type    = string
+  default = "default_db_password"
+}
+
+variable "port" {
+  type    = string
+  default = "8080" # Fallback value for the PORT
+}
+
+
 
 
 
@@ -78,6 +104,11 @@ build {
     environment_vars = [
       "DEBIAN_FRONTEND=noninteractive",
       "CHECKPOINT_DISABLE=1",
+      "DB_HOST_BUILD=${var.db_host}",
+      "DB_NAME=${var.db_name}",
+      "DB_USER=${var.db_user}",
+      "DB_PASSWORD=${var.db_password}",
+      "PORT=${var.port}"
     ]
     script = "script.sh"
   }
