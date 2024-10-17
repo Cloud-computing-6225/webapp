@@ -17,6 +17,7 @@ jobs:
       - name: Build Application Artifact
         run: |
           zip -r app.zip . -x ".git/*" -x ".github/*"  # Creates the artifact
+          ls -al
         env:
           NODE_ENV: production
 
@@ -27,14 +28,6 @@ jobs:
           name: app.zip  # This artifact will be passed to the Packer build
           path: app.zip
 
-  packer_build:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      # Step 1: Checkout Code to get the webapp and packer folders
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
       # Step 2: Download the built application artifact
       - name: Download Application Artifact
         uses: actions/download-artifact@v3
@@ -44,6 +37,7 @@ jobs:
       # Step 3: Move the artifact to the packer folder
       - name: Move Artifact to Packer Folder
         run: |
+          ls -al
           mv app.zip ./webapp/packer/  # Move the zipped artifact to the correct folder
 
       # Step 4: Set up Packer
