@@ -4,9 +4,7 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - '*'
+
 
 jobs:
   test:
@@ -20,7 +18,7 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
           MYSQL_DATABASE: ${{ secrets.DB_NAME }}                              
-          MYSQL_USER: ${{ secrets.DB_USER }}                                    
+          MYSQL_USER: ${{ secrets.DB_USER_TEST }}                                    
           MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
 
@@ -39,7 +37,7 @@ jobs:
       - name: Check for SQL to be healthy
         run: |
           for i in `seq 1 30`; do
-            if echo "SELECT 1" | mysql -h 127.0.0.1 -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_NAME }} ; then
+            if echo "SELECT 1" | mysql -h 127.0.0.1 -u${{ secrets.DB_USER_TEST }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_NAME }} ; then
               echo "MySQL is ready!"
               break
             fi
@@ -53,8 +51,26 @@ jobs:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: 3306
           DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
+          DB_USER: ${{ secrets.DB_USER_TEST }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: npm test
+
+        # Packer-related steps
+      - name: Set up Packer
+        uses: hashicorp/setup-packer@v1
+
+      - name: Run Packer fmt check on aws.pkr.hcl
+        working-directory: ./packer
+        run: |
+          packer fmt -check aws.pkr.hcl
+        
+        continue-on-error: false  
+
+      - name: Validate Packer template aws.pkr.hcl
+        working-directory: ./packer
+        run: |
+          packer validate aws.pkr.hcl
+        # If validation fails, the workflow will fail
+        continue-on-error: false
 
 
