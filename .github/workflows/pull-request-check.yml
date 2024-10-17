@@ -57,7 +57,7 @@ jobs:
 
         # Packer-related steps
       - name: Set up Packer
-        uses: hashicorp/setup-packer@latest
+        uses: hashicorp/setup-packer@v1.7.*
 
       - name: Run Packer fmt check on aws.pkr.hcl
         working-directory: ./packer
