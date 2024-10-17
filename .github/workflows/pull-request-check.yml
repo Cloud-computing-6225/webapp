@@ -4,9 +4,7 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - '*'
+
 
 jobs:
   test:
@@ -53,8 +51,32 @@ jobs:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: 3306
           DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
+          DB_USER: ${{ secrets.DB_USER}}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: npm test
+
+      # Packer-related steps
+      - name: Set up Packer
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: 1.11.2
+
+      - name: Run Packer fmt check on aws.pkr.hcl
+        working-directory: ./packer
+        run: |
+          packer fmt -check aws.pkr.hcl
+        
+        continue-on-error: false  
+
+      - name: Validate Packer template aws.pkr.hcl
+        working-directory: ./packer
+        run: |
+          packer validate -syntax-only aws.pkr.hcl
+        # If validation fails, the workflow will fail
+        continue-on-error: false
+
+
+
 
 
