@@ -26,15 +26,6 @@ variable "subnet_id" {
   type    = string
   default = "subnet-081c7c40875804bb7"
 }
-variable "aws_access_key" {
-  type = string
-  description = "AWS Access Key"
-}
-
-variable "aws_secret_access_key" {
-  type = string
-  description = "AWS Secret Access Key"
-}
 
 
 source "amazon-ebs" "my-ami" {
