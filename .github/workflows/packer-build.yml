@@ -51,7 +51,7 @@ jobs:
       - name: Run Packer
         working-directory: ./packer  # Ensure we are in the correct directory where the Packer files are
         run: |
+          export AWS_ACCESS_KEY_ID=${{ secrets.ACCESS_KEY }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.SECRET_ACCESS_KEY }}
           packer init aws.pkr.hcl  # Initialize Packer with the configuration
-          packer build -var "aws_access_key=${{ secrets.ACCESS_KEY }}" \
-                       -var "aws_secret_access_key=${{ secrets.SECRET_ACCESS_KEY }}" \
-                       aws.pkr.hcl
+          packer build aws.pkr.hcl
