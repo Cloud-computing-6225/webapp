@@ -72,7 +72,9 @@ build {
   # Unzip the application artifact on the server
   provisioner "shell" {
     inline = [
-      "mkdir -p /tmp/webapp",
+      "sudo apt-get update -y",           # Update the package list
+      "sudo apt-get install unzip -y",    # Install unzip package
+      "mkdir -p /tmp/webapp",             # Create the directory for unzipping
       "unzip /tmp/app.zip -d /tmp/webapp" # Unzips the artifact into /tmp/webapp
     ]
   }
