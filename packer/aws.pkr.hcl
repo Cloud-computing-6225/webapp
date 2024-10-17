@@ -61,10 +61,10 @@ build {
   ]
 
 
-  
+
   #to copy the app.zip artifact from GitHub Actions
   provisioner "file" {
-    source      = "app.zip"  
+    source      = "./app.zip"
     destination = "/tmp/app.zip"
   }
 
@@ -72,7 +72,7 @@ build {
   provisioner "shell" {
     inline = [
       "mkdir -p /tmp/webapp",
-      "unzip /tmp/app.zip -d /tmp/webapp"  # Unzips the artifact into /tmp/webapp
+      "unzip /tmp/app.zip -d /tmp/webapp" # Unzips the artifact into /tmp/webapp
     ]
   }
 
