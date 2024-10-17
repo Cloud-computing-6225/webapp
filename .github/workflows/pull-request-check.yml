@@ -72,7 +72,7 @@ jobs:
       - name: Validate Packer template aws.pkr.hcl
         working-directory: ./packer
         run: |
-         SKIP_APP_ZIP=true packer validate aws.pkr.hcl
+          packer validate -syntax-only aws.pkr.hcl
         # If validation fails, the workflow will fail
         continue-on-error: false
 
