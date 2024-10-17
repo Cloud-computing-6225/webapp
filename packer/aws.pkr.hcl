@@ -22,10 +22,7 @@ variable "ssh_username" {
   default = "ubuntu"
 }
 
-variable "subnet_id" {
-  type    = string
-  default = "subnet-081c7c40875804bb7"
-}
+
 
 
 source "amazon-ebs" "my-ami" {
@@ -45,7 +42,6 @@ source "amazon-ebs" "my-ami" {
   instance_type = "t2.small"
   source_ami    = "${var.source_ami}"
   ssh_username  = "${var.ssh_username}"
-  subnet_id     = "${var.subnet_id}"
 
   launch_block_device_mappings {
     delete_on_termination = true
@@ -55,7 +51,6 @@ source "amazon-ebs" "my-ami" {
   }
 }
 
-
 build {
   sources = [
     "source.amazon-ebs.my-ami",
@@ -63,7 +58,7 @@ build {
 
 
 
-  #to copy the app.zip artifact from GitHub Actions
+  #copy the app.zip artifact from GitHub Actions
   provisioner "file" {
     source      = "./app.zip"
     destination = "/tmp/app.zip"
