@@ -10,7 +10,7 @@ else
     DB_NAME=${DB_NAME:-default_db_name}
     DB_USER=${DB_USER:-default_db_user}
     DB_PASSWORD=${DB_PASSWORD:-default_db_password}
-    DB_HOST=${DB_HOST:-default_db_host}
+    DB_HOST=${DB_HOST_BUILD:-default_db_host}
     DB_PORT=${DB_PORT:-3306}
     PORT=${PORT:-8080}  # Add this line for the PORT variable
 fi

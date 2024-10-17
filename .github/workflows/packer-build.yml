@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the repository to get the webapp and packer fold
+      # Step 1: Checkout the repository to get the webapp and packer folder
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -28,30 +28,42 @@ jobs:
           name: app.zip  # This artifact will be passed to the Packer build
           path: app.zip
 
-      # Step 2: Download the built application artifact
+      # Step 4: Download the built application artifact
       - name: Download Application Artifact
         uses: actions/download-artifact@v3
         with:
           name: app.zip
 
-      # Step 3: Move the artifact to the packer folder
+      # Step 5: Move the artifact to the Packer folder
       - name: Move Artifact to Packer Folder
         run: |
           ls -al
           mv app.zip ./packer/  # Move the zipped artifact to the correct folder
 
-      # Step 4: Set up Packer
+      # Step 6: Set up Packer
       - name: Set up Packer
         uses: hashicorp/setup-packer@main
         id: setup
         with:
-         version: 1.11.2
+          version: 1.11.2
 
-      # Step 5: Run Packer to build the custom image
+      # Step 7: Run Packer to build the custom image
       - name: Run Packer
         working-directory: ./packer  # Ensure we are in the correct directory where the Packer files are
         run: |
           export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
           export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          packer init aws.pkr.hcl  # Initialize Packer with the configuration
-          packer build aws.pkr.hcl
+          export DB_HOST_BUILD=${{ secrets.DB_HOST_BUILD }}  # Correct usage for your secret
+          export DB_NAME=${{ secrets.DB_NAME }}
+          export DB_USER=${{ secrets.DB_USER }}
+          export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          export PORT=${{ secrets.PORT }} 
+    
+          # Initialize and run Packer build
+          packer init aws.pkr.hcl
+          packer build -var "db_host=${{ secrets.DB_HOST_BUILD }}" \
+                       -var "db_name=${{ secrets.DB_NAME }}" \
+                       -var "db_user=${{ secrets.DB_USER }}" \
+                       -var "db_password=${{ secrets.DB_PASSWORD }}" \
+                       -var "port=${{ secrets.PORT }}" \
+                       aws.pkr.hcl
