@@ -38,7 +38,7 @@ jobs:
       - name: Move Artifact to Packer Folder
         run: |
           ls -al
-          mv app.zip ./webapp/packer/  # Move the zipped artifact to the correct folder
+          mv app.zip ./packer/  # Move the zipped artifact to the correct folder
 
       # Step 4: Set up Packer
       - name: Set up Packer
@@ -49,7 +49,7 @@ jobs:
 
       # Step 5: Run Packer to build the custom image
       - name: Run Packer
-        working-directory: ./webapp/packer  # Ensure we are in the correct directory where the Packer files are
+        working-directory: ./packer  # Ensure we are in the correct directory where the Packer files are
         run: |
           packer init aws.pkr.hcl  # Initialize Packer with the configuration
           packer build -var "aws_access_key=${{ secrets.ACCESS_KEY }}" \
