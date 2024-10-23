@@ -51,7 +51,7 @@ sudo npm install
 cat <<EOL | sudo tee /etc/systemd/system/webapp.service
 [Unit]
 Description=Node.js WebApp
-After=network.target mysql.service
+After=network.target 
 
 [Service]
 ExecStart=/usr/bin/node /opt/webapp/server.js
