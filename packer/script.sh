@@ -25,17 +25,18 @@ echo "PORT: ${PORT}"  # Print the port for debugging
 
 # Update the system
 sudo apt-get update
-sudo apt-get install -y mysql-server nodejs npm
+# sudo apt-get install -y mysql-server nodejs npm
+sudo apt-get install -y nodejs npm
 
 # Create non-login user
 sudo groupadd csye6225
 sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225
 
-# Create MySQL user and database (instead of root)
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME};"
-sudo mysql -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-sudo mysql -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';"
-sudo mysql -e "FLUSH PRIVILEGES;"
+# # Create MySQL user and database (instead of root)
+# sudo mysql -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME};"
+# sudo mysql -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+# sudo mysql -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';"
+# sudo mysql -e "FLUSH PRIVILEGES;"
 
 # Copy application files
 sudo mkdir -p /opt/webapp
