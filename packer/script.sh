@@ -2,7 +2,7 @@
 
 # Update the system
 sudo apt-get update
-sudo apt-get install -y nodejs npm mysql-client
+sudo apt-get install -y nodejs npm 
 
 # Create non-login user
 sudo groupadd csye6225 || echo "Group csye6225 already exists."
