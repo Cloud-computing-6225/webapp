@@ -4,7 +4,7 @@
 sudo apt-get update
 sudo apt-get install -y nodejs npm 
 
-# Create non-login user
+# Create non-login user for access
 sudo groupadd csye6225 || echo "Group csye6225 already exists."
 sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225 || echo "User csye6225 already exists."
 
