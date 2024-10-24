@@ -110,11 +110,6 @@ build {
     environment_vars = [
       "DEBIAN_FRONTEND=noninteractive",
       "CHECKPOINT_DISABLE=1",
-      "DB_HOST_BUILD=${var.db_host}",
-      "DB_NAME=${var.db_name}",
-      "DB_USER=${var.db_user}",
-      "DB_PASSWORD=${var.db_password}",
-      "PORT=${var.port}"
     ]
     script = "script.sh"
   }
