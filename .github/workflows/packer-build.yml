@@ -96,10 +96,4 @@ jobs:
     
           # Initialize and run Packer build
           packer init aws.pkr.hcl
-          packer build -var "db_host=${{ secrets.DB_HOST_BUILD }}" \
-                       -var "db_name=${{ secrets.DB_NAME }}" \
-                       -var "db_user=${{ secrets.DB_USER }}" \
-                       -var "db_password=${{ secrets.DB_PASSWORD }}" \
-                       -var 'ami_users=${{ secrets.AMI_USERS }}' \
-                       -var "port=${{ secrets.PORT }}" \
-                       aws.pkr.hcl
+          packer build -var 'ami_users=${{ secrets.AMI_USERS }}' aws.pkr.hcl
