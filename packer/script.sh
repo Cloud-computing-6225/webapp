@@ -4,6 +4,9 @@
 sudo apt-get update
 sudo apt-get install -y nodejs npm 
 
+sudo yum install -y amazon-cloudwatch-agent
+sudo systemctl enable amazon-cloudwatch-agent
+
 # Create non-login user
 sudo groupadd csye6225 || echo "Group csye6225 already exists."
 sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225 || echo "User csye6225 already exists."
