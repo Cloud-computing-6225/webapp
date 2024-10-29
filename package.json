@@ -5,6 +5,7 @@
     "express": "^4.21.0",
     "install": "^0.13.0",
     "mysql2": "^3.11.3",
+    "node-statsd": "^0.1.1",
     "npm": "^10.8.3",
     "sequelize": "^6.37.3"
   },

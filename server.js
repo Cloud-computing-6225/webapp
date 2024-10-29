@@ -3,6 +3,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const userRoutes=require('./routes/userRoutes')
 const sequelize=require('./config/database')
+const StatsD = require('node-statsd'); 
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.head("/healthz", (req, res, next) => {
 });
 
 
+const statsdClient = new StatsD({ host: 'localhost', port: 8125 });
 
 // API to handle the get request
 app.get("/healthz", async (req, res) => {
