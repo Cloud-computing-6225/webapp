@@ -21,9 +21,9 @@ jobs:
     #       MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
-      # # Step 1: Checkout the repository to get the webapp and packer folder
-      # - name: Checkout Code
-      #   uses: actions/checkout@v3
+      # Step 1: Checkout the repository to get the webapp and packer folder
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       # # Step 2: MySQL Health Check
       # - name: Check for SQL to be healthy
