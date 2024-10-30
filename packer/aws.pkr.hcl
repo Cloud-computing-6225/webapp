@@ -48,6 +48,7 @@ variable "port" {
 }
 variable "ami_users" {
   type = list(string)
+  default = ["985539798198"]
 }
 
 

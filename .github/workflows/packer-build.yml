@@ -1,9 +1,9 @@
 name: Build, Test, and Deploy Custom Image
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - test
 
 jobs:
   build:
@@ -24,10 +24,6 @@ jobs:
       # Step 1: Checkout the repository to get the webapp and packer folder
       - name: Checkout Code
         uses: actions/checkout@v3
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}  # Use the branch from the fork
-          
 
       # # Step 2: MySQL Health Check
       # - name: Check for SQL to be healthy

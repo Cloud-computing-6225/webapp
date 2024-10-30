@@ -40,6 +40,18 @@ const User = sequelize.define(
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
+    profileImageUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    uploadDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    fileName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   },
   {
     timestamps: false,

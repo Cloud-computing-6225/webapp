@@ -7,6 +7,17 @@ const {
 const { basicAuth } = require("../middleware/auth");
 const {checkParams,checkBodyContent}=require('../middleware/paramCheck')
 
+
+const multer = require('multer');
+const {
+  uploadProfileImage,
+  getProfileImage,
+  deleteProfileImage,
+} = require('../controllers/imageController');
+
+const multerStorage = multer.memoryStorage(); // Store files in memory
+const upload = multer({ storage: multerStorage });
+
 const router = express.Router();
 
 router.post("/v1/user",checkParams, registerUser);
@@ -50,5 +61,17 @@ router.all("/v1/user/self/*",checkParams, (req, res) => {
     console.log('path params')
     return res.status(400).end();
   });
+
+
+
+// POST /v1/user/self/pic
+router.post('/v1/user/self/pic', upload.single('profilePic'), uploadProfileImage);
+
+// GET /v1/user/self/pic
+router.get('/v1/user/self/pic', getProfileImage);
+
+// DELETE /v1/user/self/pic
+router.delete('/v1/user/self/pic', deleteProfileImage);
+
 
 module.exports = router;
