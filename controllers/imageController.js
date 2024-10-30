@@ -1,8 +1,8 @@
 const { statsdClient } = require('../server'); // Adjust the path based on your project structure
 const AWS = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
-const User = require('../models/user'); // Import your User model
-const Image = require('../models/image'); // Import your Image model
+const User = require('../models/userModel'); // Import your User model
+const Image = require('../models/imageModel'); // Import your Image model
 
 const s3 = new AWS.S3({ region: process.env.AWS_REGION }); // Use your AWS region
 
