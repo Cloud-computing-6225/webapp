@@ -1,142 +1,143 @@
-const { statsdClient } = require('../server'); // Adjust the path based on your project structure
+const { statsdClient, logger } = require('../server'); // Import logger and statsdClient from server.js
 const AWS = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
-const User = require('../models/userModel'); // Import your User model
-const Image = require('../models/imageModel'); // Import your Image model
+const User = require('../models/userModel');
+const Image = require('../models/imageModel');
 
-const s3 = new AWS.S3({ region: process.env.AWS_REGION }); // Use your AWS region
+const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
 // Function to upload or update profile image
 const uploadProfileImage = async (req, res) => {
-    const userEmail = req.user.email; // Use email to find the user
-    const startTime = Date.now(); // Start timer for API call
+    const userEmail = req.user.email;
+    const startTime = Date.now();
+    statsdClient.increment('api.uploadProfileImage.call');
+    logger.info({ message: 'Upload profile image initiated', user: userEmail });
 
     if (!req.file) {
-        statsdClient.increment('api.uploadProfileImage.call'); // Increment API call count
-        return res.status(400).json({ code: 400 }); // Bad Request
+        logger.warn({ message: 'No file provided for upload', user: userEmail });
+        return res.status(400).json({ code: 400 });
     }
 
     const { originalname, mimetype, buffer } = req.file;
 
-    // Check if the uploaded file is an image
     if (!mimetype.startsWith('image/')) {
-        statsdClient.increment('api.uploadProfileImage.call'); // Increment API call count
-        return res.status(400).json({ code: 400 }); // Bad Request for non-image files
+        logger.warn({ message: 'Non-image file upload attempt', user: userEmail, fileType: mimetype });
+        return res.status(400).json({ code: 400 });
     }
 
-    const key = `profile-images/${uuidv4()}-${originalname}`; // S3 key
-
-    // Set parameters for S3 upload
+    const key = `profile-images/${uuidv4()}-${originalname}`;
     const params = {
         Bucket: process.env.S3_BUCKET_NAME,
         Key: key,
         Body: buffer,
         ContentType: mimetype,
-        ACL: 'public-read', // Optional: make the file publicly accessible
+        ACL: 'public-read'
     };
 
     try {
-        const s3StartTime = Date.now(); // Start timer for S3 upload
+        const s3StartTime = Date.now();
         const { Location } = await s3.upload(params);
-        const s3Duration = Date.now() - s3StartTime; // Calculate S3 upload duration
-        statsdClient.timing('s3.upload_time', s3Duration); // Log S3 upload time
+        const s3Duration = Date.now() - s3StartTime;
+        statsdClient.timing('s3.upload_time', s3Duration);
+        logger.info({ message: 'Image uploaded to S3', user: userEmail, duration: s3Duration, location: Location });
 
-        // Create or update image record in the database
-        const dbStartTime = Date.now(); // Start timer for database query
+        const dbStartTime = Date.now();
         const image = await Image.create({
             file_name: originalname,
             url: Location,
             upload_date: new Date(),
-            user_id: req.user.id // Assuming you have access to the user ID
+            user_id: req.user.id
         });
-        const dbDuration = Date.now() - dbStartTime; // Calculate DB update duration
-        statsdClient.timing('db.insert_time', dbDuration); // Log database insert time
+        const dbDuration = Date.now() - dbStartTime;
+        statsdClient.timing('db.insert_time', dbDuration);
+        logger.info({ message: 'Database entry created for image', user: userEmail, duration: dbDuration, imageId: image.id });
 
-        const duration = Date.now() - startTime; // Calculate total API duration
-        statsdClient.timing('api.uploadProfileImage.response_time', duration); // Log API response time
-        statsdClient.increment('api.uploadProfileImage.call'); // Increment API call count
+        const duration = Date.now() - startTime;
+        statsdClient.timing('api.uploadProfileImage.response_time', duration);
 
         return res.status(201).json({
             file_name: originalname,
             id: image.id,
             url: Location,
-            upload_date: new Date().toISOString().split('T')[0], // Format date as "YYYY-MM-DD"
+            upload_date: new Date().toISOString().split('T')[0],
             user_id: req.user.id
         });
     } catch (error) {
-        console.error('Error uploading image:', error);
-        return res.status(500).json({ code: 500 }); // Internal Server Error
+        logger.error({ message: 'Error uploading image', user: userEmail, error: error.message });
+        return res.status(500).json({ code: 500 });
     }
 };
 
 // Function to get profile image
 const getProfileImage = async (req, res) => {
-    const userEmail = req.user.email; // Get user email from request
-    const startTime = Date.now(); // Start timer for API call
+    const userEmail = req.user.email;
+    const startTime = Date.now();
+    statsdClient.increment('api.getProfileImage.call');
+    logger.info({ message: 'Fetch profile image initiated', user: userEmail });
 
     try {
-        const image = await Image.findOne({ where: { user_id: req.user.id } }); // Get the single image for the user
+        const image = await Image.findOne({ where: { user_id: req.user.id } });
 
-        // Check if the image exists
         if (!image) {
-            statsdClient.increment('api.getProfileImage.call'); // Increment API call count
-            return res.status(404).json({ code: 404 }); // Not Found
+            logger.warn({ message: 'Profile image not found', user: userEmail });
+            return res.status(404).json({ code: 404 });
         }
 
-        const duration = Date.now() - startTime; // Calculate total API duration
-        statsdClient.timing('api.getProfileImage.response_time', duration); // Log API response time
-        statsdClient.increment('api.getProfileImage.call'); // Increment API call count
+        const duration = Date.now() - startTime;
+        statsdClient.timing('api.getProfileImage.response_time', duration);
 
         return res.status(200).json({
             file_name: image.file_name,
             id: image.id,
             url: image.url,
-            upload_date: image.upload_date.toISOString().split('T')[0], // Format date as "YYYY-MM-DD"
+            upload_date: image.upload_date.toISOString().split('T')[0],
             user_id: image.user_id
         });
     } catch (error) {
-        console.error('Error fetching image:', error);
-        return res.status(500).json({ code: 500 }); // Internal Server Error
+        logger.error({ message: 'Error fetching image', user: userEmail, error: error.message });
+        return res.status(500).json({ code: 500 });
     }
 };
 
 // Function to delete profile image
 const deleteProfileImage = async (req, res) => {
-    const { imageId } = req.params; // Get image ID from request parameters
-    const userEmail = req.user.email; // Get user email from request
-    const startTime = Date.now(); // Start timer for API call
+    const { imageId } = req.params;
+    const userEmail = req.user.email;
+    const startTime = Date.now();
+    statsdClient.increment('api.deleteProfileImage.call');
+    logger.info({ message: 'Delete profile image initiated', user: userEmail, imageId });
 
     try {
         const image = await Image.findOne({ where: { id: imageId, user_id: req.user.id } });
         if (!image) {
-            statsdClient.increment('api.deleteProfileImage.call'); // Increment API call count
-            return res.status(404).json({ code: 404 }); // Not Found
+            logger.warn({ message: 'Profile image not found for deletion', user: userEmail, imageId });
+            return res.status(404).json({ code: 404 });
         }
 
         const params = {
             Bucket: process.env.S3_BUCKET_NAME,
-            Key: image.url.split('/').slice(-2).join('/'), // Extract key from URL
+            Key: image.url.split('/').slice(-2).join('/')
         };
 
-        const s3StartTime = Date.now(); // Start timer for S3 delete
+        const s3StartTime = Date.now();
         await s3.deleteObject(params);
-        const s3Duration = Date.now() - s3StartTime; // Calculate S3 delete duration
-        statsdClient.timing('s3.delete_time', s3Duration); // Log S3 delete time
+        const s3Duration = Date.now() - s3StartTime;
+        statsdClient.timing('s3.delete_time', s3Duration);
+        logger.info({ message: 'Image deleted from S3', user: userEmail, duration: s3Duration, imageId });
 
-        // Remove image record from database
-        const dbStartTime = Date.now(); // Start timer for database query
+        const dbStartTime = Date.now();
         await Image.destroy({ where: { id: imageId } });
-        const dbDuration = Date.now() - dbStartTime; // Calculate DB delete duration
-        statsdClient.timing('db.delete_time', dbDuration); // Log database delete time
+        const dbDuration = Date.now() - dbStartTime;
+        statsdClient.timing('db.delete_time', dbDuration);
+        logger.info({ message: 'Image record deleted from database', user: userEmail, duration: dbDuration, imageId });
 
-        const duration = Date.now() - startTime; // Calculate total API duration
-        statsdClient.timing('api.deleteProfileImage.response_time', duration); // Log API response time
-        statsdClient.increment('api.deleteProfileImage.call'); // Increment API call count
+        const duration = Date.now() - startTime;
+        statsdClient.timing('api.deleteProfileImage.response_time', duration);
 
-        return res.status(204).send(); // No Content
+        return res.status(204).send();
     } catch (error) {
-        console.error('Error deleting image:', error);
-        return res.status(500).json({ code: 500 }); // Internal Server Error
+        logger.error({ message: 'Error deleting image', user: userEmail, error: error.message, imageId });
+        return res.status(500).json({ code: 500 });
     }
 };
 

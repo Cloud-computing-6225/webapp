@@ -1,57 +1,70 @@
 const express = require("express");
-// const Sequelize = require("sequelize");
 const dotenv = require("dotenv");
-const userRoutes=require('./routes/userRoutes')
-const sequelize=require('./config/database')
-const StatsD = require('node-statsd'); 
+const userRoutes = require('./routes/userRoutes');
+const sequelize = require('./config/database');
+const StatsD = require('node-statsd');
+const { createLogger, format, transports } = require('winston');
 
+// Load environment variables
 dotenv.config();
 
-
-
-
 const app = express();
+
+// Set up Winston Logger for JSON logging
+const logger = createLogger({
+  level: 'info',
+  format: format.combine(
+    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    format.json()  // Output logs in JSON format
+  ),
+  transports: [
+    new transports.Console(),
+    new transports.File({ filename: '/opt/webapp/app.log' }) // Logs also saved to a file
+  ]
+});
 
 // Use environment variables or default values for StatsD
 const statsdHost = process.env.STATSD_HOST || 'localhost';
 const statsdPort = process.env.STATSD_PORT || 8125;
-
 const statsdClient = new StatsD({ host: statsdHost, port: statsdPort });
 
+// Middleware to parse JSON bodies
 app.use(express.json({ type: "*/*" }));
 
-app.use(userRoutes)
+// Routes
+app.use(userRoutes);
 
-app.head("/healthz", (req, res, next) => {
- 
-    return res
+// Health check endpoints
+app.head("/healthz", (req, res) => {
+  statsdClient.increment('api.healthz.head.call_count');
+  const startApiTime = Date.now();
+  
+  try {
+    logger.info({ message: 'HEAD request received on /healthz' });
+    res
       .status(405)
       .set({
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       })
-      .end()
-
+      .end();
+  } catch (error) {
+    logger.error({ message: 'Error processing HEAD request on /healthz', error: error.message });
+    res.status(500).end();
+  } finally {
+    statsdClient.timing('api.healthz.head.response_time', Date.now() - startApiTime);
+  }
 });
 
-
-
-
-// API to handle the get request
 app.get("/healthz", async (req, res) => {
-  if ((req.body && Object.keys(req.body).length > 0) || Object.keys(req.query).length > 0) {
-    return res
-      .status(400)
-      .set({
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      })
-      .end();
-  }
+  statsdClient.increment('api.healthz.get.call_count');
+  const startApiTime = Date.now();
 
   try {
+    logger.info({ message: 'GET request received on /healthz' });
     await sequelize.authenticate();
-    return res
+    logger.info({ message: 'Database connection successful on /healthz' });
+    res
       .status(200)
       .set({
         "Cache-Control": "no-cache",
@@ -59,44 +72,65 @@ app.get("/healthz", async (req, res) => {
       })
       .end();
   } catch (error) {
-    return res
+    logger.error({ message: 'Database connection error on /healthz', error: error.message });
+    res
       .status(503)
       .set({
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       })
       .end();
+  } finally {
+    statsdClient.timing('api.healthz.get.response_time', Date.now() - startApiTime);
   }
 });
 
-// API to handle post, put, delete, patch
-app.all("/healthz", async (req, res) => {
-  return res
-    .status(405)
-    .set({
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    })
-    .end();
+// Catch-all handler for invalid /healthz methods
+app.all("/healthz", (req, res) => {
+  statsdClient.increment('api.healthz.invalid_method.call_count');
+  const startApiTime = Date.now();
+
+  try {
+    logger.warn({ message: 'Invalid method received on /healthz', method: req.method });
+    res
+      .status(405)
+      .set({
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      })
+      .end();
+  } catch (error) {
+    logger.error({ message: 'Error processing invalid method on /healthz', error: error.message });
+    res.status(500).end();
+  } finally {
+    statsdClient.timing('api.healthz.invalid_method.response_time', Date.now() - startApiTime);
+  }
 });
 
-// Catch any path parameters for /healthz
+// Catch any path parameters for /healthz/*
 app.all("/healthz/*", (req, res) => {
-  console.log('path params')
-  return res.status(400).end();
+  statsdClient.increment('api.healthz.invalid_path.call_count');
+  const startApiTime = Date.now();
+
+  try {
+    logger.warn({ message: 'Invalid path parameter received on /healthz', path: req.path });
+    res.status(400).end();
+  } catch (error) {
+    logger.error({ message: 'Error processing invalid path parameter on /healthz', error: error.message });
+    res.status(500).end();
+  } finally {
+    statsdClient.timing('api.healthz.invalid_path.response_time', Date.now() - startApiTime);
+  }
 });
 
-
-
-// app.listen(process.env.PORT, () => {
-//   console.log(`Server is running on port ${process.env.PORT}`);
-// });
+// Start the server
 const port = process.env.PORT || 8080;
 sequelize.sync().then(() => {
   app.listen(port, () => {
-    console.log(`Server is running on port ${port}}`);
+    logger.info({ message: `Server started on port ${port}` });
   });
 }).catch(error => {
-  console.error('Unable to connect to the database:', error);
+  logger.error({ message: 'Unable to connect to the database on startup', error: error.message });
 });
-module.exports = { app, statsdClient }; 
+
+module.exports = { app, statsdClient, logger };

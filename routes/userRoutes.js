@@ -65,13 +65,13 @@ router.all("/v1/user/self/*",checkParams, (req, res) => {
 
 
 // POST /v1/user/self/pic
-router.post('/v1/user/self/pic', upload.single('profilePic'), uploadProfileImage);
+router.post('/v1/user/self/pic',basicAuth, upload.single('profilePic'), uploadProfileImage);
 
 // GET /v1/user/self/pic
-router.get('/v1/user/self/pic', getProfileImage);
+router.get('/v1/user/self/pic',basicAuth, getProfileImage);
 
 // DELETE /v1/user/self/pic
-router.delete('/v1/user/self/pic', deleteProfileImage);
+router.delete('/v1/user/self/pic',basicAuth, deleteProfileImage);
 
 
 module.exports = router;
