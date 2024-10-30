@@ -12,6 +12,12 @@ dotenv.config();
 
 const app = express();
 
+// Use environment variables or default values for StatsD
+const statsdHost = process.env.STATSD_HOST || 'localhost';
+const statsdPort = process.env.STATSD_PORT || 8125;
+
+const statsdClient = new StatsD({ host: statsdHost, port: statsdPort });
+
 app.use(express.json({ type: "*/*" }));
 
 app.use(userRoutes)
@@ -29,7 +35,7 @@ app.head("/healthz", (req, res, next) => {
 });
 
 
-const statsdClient = new StatsD({ host: 'localhost', port: 8125 });
+
 
 // API to handle the get request
 app.get("/healthz", async (req, res) => {
@@ -93,4 +99,4 @@ sequelize.sync().then(() => {
 }).catch(error => {
   console.error('Unable to connect to the database:', error);
 });
-module.exports = app;
+module.exports = { app, statsdClient }; 

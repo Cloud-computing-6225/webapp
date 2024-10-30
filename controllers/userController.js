@@ -1,8 +1,6 @@
+const { statsdClient } = require('../server');
 const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
-const AWS = require("aws-sdk");
-const multer = require("multer");
-const { v4: uuidv4 } = require("uuid");
 require('dotenv').config(); 
 
 // To register a new user
