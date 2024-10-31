@@ -29,7 +29,7 @@ const app = express();
 // const statsdClient = new StatsD({ host: statsdHost, port: statsdPort });
 
 // Middleware to parse JSON bodies
-app.use(express.json({ type: "*/*" }));
+app.use(express.json());
 
 // Routes
 app.use(userRoutes);

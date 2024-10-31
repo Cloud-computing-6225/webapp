@@ -1,5 +1,5 @@
 const { statsdClient, logger } = require('../stats'); // Import logger and statsdClient from server.js
-const AWS = require('@aws-sdk/client-s3');
+const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/userModel');
 const Image = require('../models/imageModel');
@@ -8,6 +8,7 @@ const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
 // Function to upload or update profile image
 const uploadProfileImage = async (req, res) => {
+    console.log("ISITT")
     const userEmail = req.user.email;
     const startTime = Date.now();
     statsdClient.increment('api.uploadProfileImage.call');
@@ -36,7 +37,7 @@ const uploadProfileImage = async (req, res) => {
 
     try {
         const s3StartTime = Date.now();
-        const { Location } = await s3.upload(params);
+        const { Location } = await s3.upload(params).promise();
         const s3Duration = Date.now() - s3StartTime;
         statsdClient.timing('s3.upload_time', s3Duration);
         logger.info({ message: 'Image uploaded to S3', user: userEmail, duration: s3Duration, location: Location });
@@ -123,7 +124,7 @@ const deleteProfileImage = async (req, res) => {
 
         // Delete the image from S3
         const s3StartTime = Date.now();
-        await s3.deleteObject(params);
+        await s3.deleteObject(params).promise();
         const s3Duration = Date.now() - s3StartTime;
         statsdClient.timing('s3.delete_time', s3Duration);
         logger.info({ message: 'Image deleted from S3', user: userEmail, duration: s3Duration });
