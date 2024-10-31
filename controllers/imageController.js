@@ -32,7 +32,7 @@ const uploadProfileImage = async (req, res) => {
         Key: key,
         Body: buffer,
         ContentType: mimetype,
-        ACL: 'public-read'
+        
     };
 
     try {
