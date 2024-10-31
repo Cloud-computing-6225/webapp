@@ -2,31 +2,31 @@ const express = require("express");
 const dotenv = require("dotenv");
 const userRoutes = require('./routes/userRoutes');
 const sequelize = require('./config/database');
-const StatsD = require('node-statsd');
-const { createLogger, format, transports } = require('winston');
+
+const { statsdClient, logger } = require('./stats');
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Set up Winston Logger for JSON logging
-const logger = createLogger({
-  level: 'info',
-  format: format.combine(
-    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    format.json()  // Output logs in JSON format
-  ),
-  transports: [
-    new transports.Console(),
-    new transports.File({ filename: '/opt/webapp/app.log' }) // Logs also saved to a file
-  ]
-});
+// // Set up Winston Logger for JSON logging
+// const logger = createLogger({
+//   level: 'info',
+//   format: format.combine(
+//     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+//     format.json()  // Output logs in JSON format
+//   ),
+//   transports: [
+//     new transports.Console(),
+//     new transports.File({ filename: '/opt/webapp/app.log' }) // Logs also saved to a file
+//   ]
+// });
 
-// Use environment variables or default values for StatsD
-const statsdHost = process.env.STATSD_HOST || 'localhost';
-const statsdPort = process.env.STATSD_PORT || 8125;
-const statsdClient = new StatsD({ host: statsdHost, port: statsdPort });
+// // Use environment variables or default values for StatsD
+// const statsdHost = process.env.STATSD_HOST || 'localhost';
+// const statsdPort = process.env.STATSD_PORT || 8125;
+// const statsdClient = new StatsD({ host: statsdHost, port: statsdPort });
 
 // Middleware to parse JSON bodies
 app.use(express.json({ type: "*/*" }));
@@ -133,4 +133,4 @@ sequelize.sync().then(() => {
   logger.error({ message: 'Unable to connect to the database on startup', error: error.message });
 });
 
-module.exports = { app, statsdClient, logger };
+module.exports = { app};

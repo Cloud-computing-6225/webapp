@@ -1,4 +1,4 @@
-const { statsdClient, logger } = require('../server'); // Import logger and statsdClient from server.js
+const { statsdClient, logger } = require('../stats'); // Import logger and statsdClient from server.js
 const AWS = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/userModel');
@@ -101,45 +101,51 @@ const getProfileImage = async (req, res) => {
 
 // Function to delete profile image
 const deleteProfileImage = async (req, res) => {
-    const { imageId } = req.params;
     const userEmail = req.user.email;
+    const userId = req.user.id;
     const startTime = Date.now();
     statsdClient.increment('api.deleteProfileImage.call');
-    logger.info({ message: 'Delete profile image initiated', user: userEmail, imageId });
+    logger.info({ message: 'Delete profile image initiated', user: userEmail });
 
     try {
-        const image = await Image.findOne({ where: { id: imageId, user_id: req.user.id } });
+        // Find the image associated with the user
+        const image = await Image.findOne({ where: { user_id: userId } });
         if (!image) {
-            logger.warn({ message: 'Profile image not found for deletion', user: userEmail, imageId });
+            logger.warn({ message: 'Profile image not found for deletion', user: userEmail });
             return res.status(404).json({ code: 404 });
         }
 
+        // Prepare parameters to delete from S3
         const params = {
             Bucket: process.env.S3_BUCKET_NAME,
             Key: image.url.split('/').slice(-2).join('/')
         };
 
+        // Delete the image from S3
         const s3StartTime = Date.now();
         await s3.deleteObject(params);
         const s3Duration = Date.now() - s3StartTime;
         statsdClient.timing('s3.delete_time', s3Duration);
-        logger.info({ message: 'Image deleted from S3', user: userEmail, duration: s3Duration, imageId });
+        logger.info({ message: 'Image deleted from S3', user: userEmail, duration: s3Duration });
 
+        // Delete the image record from the database
         const dbStartTime = Date.now();
-        await Image.destroy({ where: { id: imageId } });
+        await Image.destroy({ where: { user_id: userId } });
         const dbDuration = Date.now() - dbStartTime;
         statsdClient.timing('db.delete_time', dbDuration);
-        logger.info({ message: 'Image record deleted from database', user: userEmail, duration: dbDuration, imageId });
+        logger.info({ message: 'Image record deleted from database', user: userEmail, duration: dbDuration });
 
+        // Calculate the full request duration and log it
         const duration = Date.now() - startTime;
         statsdClient.timing('api.deleteProfileImage.response_time', duration);
 
         return res.status(204).send();
     } catch (error) {
-        logger.error({ message: 'Error deleting image', user: userEmail, error: error.message, imageId });
+        logger.error({ message: 'Error deleting image', user: userEmail, error: error.message });
         return res.status(500).json({ code: 500 });
     }
 };
+
 
 module.exports = {
     uploadProfileImage,
