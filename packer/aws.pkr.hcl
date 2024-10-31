@@ -47,7 +47,8 @@ variable "port" {
   default = "8080" # Fallback value for the PORT
 }
 variable "ami_users" {
-  type = list(string)
+  type    = list(string)
+  default = ["985539798198"]
 }
 
 

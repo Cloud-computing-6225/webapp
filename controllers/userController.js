@@ -1,45 +1,38 @@
+const { statsdClient, logger } = require('../server'); // Import logger and statsdClient from server.js
 const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
+require('dotenv').config(); 
 
 // To register a new user
 const registerUser = async (req, res) => {
+  statsdClient.increment('api.registerUser.call_count');
+  const startApiTime = Date.now();
   const { firstName, lastName, password, email } = req.body;
-  console.log("Inside");
+
+  logger.info({ message: 'User registration initiated', email });
+
   if (!firstName || !lastName || !email || !password) {
-    return res.status(400).end();
-  }
-  
-
-  const allowedParams = ['firstName', 'lastName', 'password', 'email'];
-  const requestParams = Object.keys(req.body);
-
-  // Check if any additional parameters are present
-  const additionalParams = requestParams.filter(param => !allowedParams.includes(param));
-  if (additionalParams.length > 0) {
+    logger.warn({ message: 'Missing required fields for user registration', email });
     return res.status(400).end();
   }
 
-  // Validate field formats
-  if (firstName.length < 2 || lastName.length < 2) {
-    return res.status(400).end();
-  }
-
-  if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
-    return res.status(400).end();
-  }
-
-  if (password.length < 4) {
-    return res.status(400).end();
-  }
-
- 
   try {
-    const existingUser = await User.findOne({ where: { email: email } });
+    const startDbTime = Date.now();
+    const existingUser = await User.findOne({ where: { email } });
+    statsdClient.timing('db.registerUser.findOne.query_time', Date.now() - startDbTime);
 
     if (existingUser) {
+      logger.warn({ message: 'User already exists', email });
       return res.status(400).end();
     }
+
+    const createUserStartTime = Date.now();
     const user = await User.create({ email, firstName, lastName, password });
+    statsdClient.timing('db.registerUser.create.query_time', Date.now() - createUserStartTime);
+
+    logger.info({ message: 'User registered successfully', userId: user.id, email });
+    const apiDuration = Date.now() - startApiTime;
+    statsdClient.timing('api.registerUser.response_time', apiDuration);
     return res.status(201).json({
       id: user.id,
       firstName: user.firstName,
@@ -49,20 +42,34 @@ const registerUser = async (req, res) => {
       account_updated: user.account_updated,
     });
   } catch (error) {
-    res.status(500).end();
+    logger.error({ message: 'Error registering user', email, error: error.message });
+    return res.status(500).end();
+  } finally {
+    statsdClient.timing('api.registerUser.response_time', Date.now() - startApiTime);
   }
 };
 
 // To get user information
 const getUserInfo = async (req, res) => {
+  statsdClient.increment('api.getUserInfo.call_count');
+  const startApiTime = Date.now();
+
+  logger.info({ message: 'Fetching user information', email: req.user.email });
+
   try {
+    const startDbTime = Date.now();
     const user = await User.findOne({ where: { email: req.user.email } });
+    statsdClient.timing('db.getUserInfo.findOne.query_time', Date.now() - startDbTime);
+
     if (!user) {
+      logger.warn({ message: 'User not found', email: req.user.email });
       return res.status(404).end();
     }
-    
+
+    logger.info({ message: 'User information retrieved successfully', userId: user.id, email: req.user.email });
+    statsdClient.timing('api.getUserInfo.response_time', Date.now() - startApiTime);
     return res.status(200).json({
-      id:user.id,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
@@ -70,54 +77,52 @@ const getUserInfo = async (req, res) => {
       account_updated: user.account_updated,
     });
   } catch (error) {
+    logger.error({ message: 'Error fetching user information', email: req.user.email, error: error.message });
     return res.status(500).end();
+  } finally {
+    statsdClient.timing('api.getUserInfo.response_time', Date.now() - startApiTime);
   }
 };
 
 // To update user information
 const updateUser = async (req, res) => {
-  
+  statsdClient.increment('api.updateUser.call_count');
+  const startApiTime = Date.now();
+
   const { firstName, lastName, password } = req.body;
+  logger.info({ message: 'Updating user information', email: req.user.email });
 
-  if (!firstName || !lastName ||  !password) {
-    return res.status(400).end();
-  }
-  console.log(firstName, lastName, password);
-
-  const allowedParams = ['firstName', 'lastName', 'password'];
-  const requestParams = Object.keys(req.body);
-
-  // Check if any additional parameters are present
-  const additionalParams = requestParams.filter(param => !allowedParams.includes(param));
-  if (additionalParams.length > 0) {
-    return res.status(400).end();
-  }
-   // Validate field formats
-   if (firstName.length < 2 || lastName.length < 2) {
-    return res.status(400).end();
-  }
-
-
-  if (password.length < 4) {
-    console.log('SHORT')
+  if (!firstName || !lastName || !password) {
+    logger.warn({ message: 'Missing required fields for user update', email: req.user.email });
     return res.status(400).end();
   }
 
   try {
+    const startDbTime = Date.now();
     const user = await User.findOne({ where: { email: req.user.email } });
+    statsdClient.timing('db.updateUser.findOne.query_time', Date.now() - startDbTime);
+
     if (!user) {
+      logger.warn({ message: 'User not found for update', email: req.user.email });
       return res.status(404).end();
     }
-      user.firstName = firstName;
-      user.lastName = lastName;
-      user.password = password;
+
+    const updateStartTime = Date.now();
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user.password = password;
     user.account_updated = new Date();
     await user.save();
+    statsdClient.timing('db.updateUser.save.query_time', Date.now() - updateStartTime);
 
-    return res.status(204).end()
-    
+    logger.info({ message: 'User information updated successfully', userId: user.id, email: req.user.email });
+    statsdClient.timing('api.updateUser.response_time', Date.now() - startApiTime);
+    return res.status(204).end();
   } catch (error) {
+    logger.error({ message: 'Error updating user information', email: req.user.email, error: error.message });
     return res.status(500).end();
+  } finally {
+    statsdClient.timing('api.updateUser.response_time', Date.now() - startApiTime);
   }
 };
 
