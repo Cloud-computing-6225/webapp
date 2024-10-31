@@ -8,7 +8,7 @@ const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
 // Function to upload or update profile image
 const uploadProfileImage = async (req, res) => {
-    console.log("ISITT")
+    console.log("ISITT");
     const userEmail = req.user.email;
     const startTime = Date.now();
     statsdClient.increment('api.uploadProfileImage.call');
@@ -26,16 +26,22 @@ const uploadProfileImage = async (req, res) => {
         return res.status(400).json({ code: 400 });
     }
 
-    const key = `profile-images/${uuidv4()}-${originalname}`;
-    const params = {
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: key,
-        Body: buffer,
-        ContentType: mimetype,
-        
-    };
-
     try {
+        // Check if an image already exists for the user
+        const existingImage = await Image.findOne({ where: { user_id: req.user.id } });
+        if (existingImage) {
+            logger.warn({ message: 'User already has a profile image', user: userEmail });
+            return res.status(409).json({ code: 409, message: 'Profile image already exists' });
+        }
+
+        const key = `profile-images/${uuidv4()}-${originalname}`;
+        const params = {
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: key,
+            Body: buffer,
+            ContentType: mimetype,
+        };
+
         const s3StartTime = Date.now();
         const { Location } = await s3.upload(params).promise();
         const s3Duration = Date.now() - s3StartTime;
@@ -47,7 +53,7 @@ const uploadProfileImage = async (req, res) => {
             file_name: originalname,
             url: Location,
             upload_date: new Date(),
-            user_id: req.user.id
+            user_id: req.user.id,
         });
         const dbDuration = Date.now() - dbStartTime;
         statsdClient.timing('db.insert_time', dbDuration);
@@ -61,13 +67,14 @@ const uploadProfileImage = async (req, res) => {
             id: image.id,
             url: Location,
             upload_date: new Date().toISOString().split('T')[0],
-            user_id: req.user.id
+            user_id: req.user.id,
         });
     } catch (error) {
         logger.error({ message: 'Error uploading image', user: userEmail, error: error.message });
         return res.status(500).json({ code: 500 });
     }
 };
+
 
 // Function to get profile image
 const getProfileImage = async (req, res) => {
