@@ -57,21 +57,17 @@ router.all("/v1/user/self", (req, res) => {
     .end();
 });
 
-router.all("/v1/user/self/*",checkParams, (req, res) => {
-    console.log('path params')
-    return res.status(400).end();
-  });
 
 
 
 // POST /v1/user/self/pic
-router.post('/v1/user/self/pic',basicAuth, upload.single('profilePic'), uploadProfileImage);
+router.post("/v1/user/self/pic",basicAuth, upload.single('profilePic'), uploadProfileImage);
 
 // GET /v1/user/self/pic
-router.get('/v1/user/self/pic',basicAuth, getProfileImage);
+router.get("/v1/user/self/pic",basicAuth, getProfileImage);
 
 // DELETE /v1/user/self/pic
-router.delete('/v1/user/self/pic',basicAuth, deleteProfileImage);
+router.delete("/v1/user/self/pic",basicAuth, deleteProfileImage);
 
 
 module.exports = router;
