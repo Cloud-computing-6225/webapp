@@ -13,7 +13,7 @@ const registerUser = async (req, res) => {
 
   if (!firstName || !lastName || !email || !password) {
     logger.warn({ message: 'Missing required fields for user registration', email });
-    return res.status(400).end();
+    return res.status(400).json({ code: 400 });
   }
 
   try {
@@ -23,7 +23,7 @@ const registerUser = async (req, res) => {
 
     if (existingUser) {
       logger.warn({ message: 'User already exists', email });
-      return res.status(400).end();
+      return res.status(400).json({ code: 400 });
     }
 
     const createUserStartTime = Date.now();
@@ -48,7 +48,7 @@ const registerUser = async (req, res) => {
     });
   } catch (error) {
     logger.error({ message: 'Error registering user', email, error: error.message });
-    return res.status(500).end();
+    return res.status(500).json({ code: 500 });
   } finally {
     statsdClient.timing('api.registerUser.response_time', Date.now() - startApiTime);
   }
@@ -68,7 +68,7 @@ const getUserInfo = async (req, res) => {
 
     if (!user) {
       logger.warn({ message: 'User not found', email: req.user.email });
-      return res.status(404).end();
+      return res.status(404).json({ code: 404 });
     }
 
     logger.info({ message: 'User information retrieved successfully', userId: user.id, email: req.user.email });
@@ -83,7 +83,7 @@ const getUserInfo = async (req, res) => {
     });
   } catch (error) {
     logger.error({ message: 'Error fetching user information', email: req.user.email, error: error.message });
-    return res.status(500).end();
+    return res.status(500).json({ code: 500 });
   } finally {
     statsdClient.timing('api.getUserInfo.response_time', Date.now() - startApiTime);
   }
@@ -99,7 +99,7 @@ const updateUser = async (req, res) => {
 
   if (!firstName || !lastName || !password) {
     logger.warn({ message: 'Missing required fields for user update', email: req.user.email });
-    return res.status(400).end();
+    return res.status(400).json({ code: 400 });
   }
 
   try {
@@ -109,7 +109,7 @@ const updateUser = async (req, res) => {
 
     if (!user) {
       logger.warn({ message: 'User not found for update', email: req.user.email });
-      return res.status(404).end();
+      return res.status(404).json({ code: 404 });
     }
 
     const updateStartTime = Date.now();
@@ -122,10 +122,10 @@ const updateUser = async (req, res) => {
 
     logger.info({ message: 'User information updated successfully', userId: user.id, email: req.user.email });
     statsdClient.timing('api.updateUser.response_time', Date.now() - startApiTime);
-    return res.status(204).end();
+    return res.status(204).json({ code: 204 });
   } catch (error) {
     logger.error({ message: 'Error updating user information', email: req.user.email, error: error.message });
-    return res.status(500).end();
+    return res.status(500).json({ code: 500 });
   } finally {
     statsdClient.timing('api.updateUser.response_time', Date.now() - startApiTime);
   }

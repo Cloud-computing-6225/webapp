@@ -10,24 +10,6 @@ dotenv.config();
 
 const app = express();
 
-// // Set up Winston Logger for JSON logging
-// const logger = createLogger({
-//   level: 'info',
-//   format: format.combine(
-//     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-//     format.json()  // Output logs in JSON format
-//   ),
-//   transports: [
-//     new transports.Console(),
-//     new transports.File({ filename: '/opt/webapp/app.log' }) // Logs also saved to a file
-//   ]
-// });
-
-// // Use environment variables or default values for StatsD
-// const statsdHost = process.env.STATSD_HOST || 'localhost';
-// const statsdPort = process.env.STATSD_PORT || 8125;
-// const statsdClient = new StatsD({ host: statsdHost, port: statsdPort });
-
 // Middleware to parse JSON bodies
 app.use(express.json());
 
@@ -47,10 +29,10 @@ app.head("/healthz", (req, res) => {
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       })
-      .end();
+      .json({ code: 405 });
   } catch (error) {
     logger.error({ message: 'Error processing HEAD request on /healthz', error: error.message });
-    res.status(500).end();
+    res.status(500).json({ code: 500 });
   } finally {
     statsdClient.timing('api.healthz.head.response_time', Date.now() - startApiTime);
   }
@@ -70,7 +52,7 @@ app.get("/healthz", async (req, res) => {
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       })
-      .end();
+      .json({ code: 200 });
   } catch (error) {
     logger.error({ message: 'Database connection error on /healthz', error: error.message });
     res
@@ -79,7 +61,7 @@ app.get("/healthz", async (req, res) => {
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       })
-      .end();
+      .json({ code: 503 });
   } finally {
     statsdClient.timing('api.healthz.get.response_time', Date.now() - startApiTime);
   }
@@ -98,10 +80,10 @@ app.all("/healthz", (req, res) => {
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       })
-      .end();
+      .json({ code: 405 });
   } catch (error) {
     logger.error({ message: 'Error processing invalid method on /healthz', error: error.message });
-    res.status(500).end();
+    res.status(500).json({ code: 500 });
   } finally {
     statsdClient.timing('api.healthz.invalid_method.response_time', Date.now() - startApiTime);
   }
@@ -114,10 +96,10 @@ app.all("/healthz/*", (req, res) => {
 
   try {
     logger.warn({ message: 'Invalid path parameter received on /healthz', path: req.path });
-    res.status(400).end();
+    res.status(400).json({ code: 400 });
   } catch (error) {
     logger.error({ message: 'Error processing invalid path parameter on /healthz', error: error.message });
-    res.status(500).end();
+    res.status(500).json({ code: 500 });
   } finally {
     statsdClient.timing('api.healthz.invalid_path.response_time', Date.now() - startApiTime);
   }
@@ -133,4 +115,4 @@ sequelize.sync().then(() => {
   logger.error({ message: 'Unable to connect to the database on startup', error: error.message });
 });
 
-module.exports = { app};
+module.exports = { app };
