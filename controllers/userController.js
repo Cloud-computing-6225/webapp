@@ -1,4 +1,4 @@
-const { statsdClient, logger } = require('../server'); // Import logger and statsdClient from server.js
+const { statsdClient, logger } = require('../stats'); // Import logger and statsdClient from stats.js
 const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
 require('dotenv').config(); 
@@ -27,7 +27,12 @@ const registerUser = async (req, res) => {
     }
 
     const createUserStartTime = Date.now();
-    const user = await User.create({ email, firstName, lastName, password });
+    const user = await User.create({
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      password
+    });
     statsdClient.timing('db.registerUser.create.query_time', Date.now() - createUserStartTime);
 
     logger.info({ message: 'User registered successfully', userId: user.id, email });
@@ -35,8 +40,8 @@ const registerUser = async (req, res) => {
     statsdClient.timing('api.registerUser.response_time', apiDuration);
     return res.status(201).json({
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.first_name,
+      lastName: user.last_name,
       email: user.email,
       account_created: user.account_created,
       account_updated: user.account_updated,
@@ -70,8 +75,8 @@ const getUserInfo = async (req, res) => {
     statsdClient.timing('api.getUserInfo.response_time', Date.now() - startApiTime);
     return res.status(200).json({
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.first_name,
+      lastName: user.last_name,
       email: user.email,
       account_created: user.account_created,
       account_updated: user.account_updated,
@@ -108,8 +113,8 @@ const updateUser = async (req, res) => {
     }
 
     const updateStartTime = Date.now();
-    user.firstName = firstName;
-    user.lastName = lastName;
+    user.first_name = firstName;
+    user.last_name = lastName;
     user.password = password;
     user.account_updated = new Date();
     await user.save();
