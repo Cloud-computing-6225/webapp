@@ -110,6 +110,7 @@ const port = process.env.PORT || 8080;
 sequelize.sync().then(() => {
   app.listen(port, () => {
     logger.info({ message: `Server started on port ${port}` });
+    console.log(`Server started on port ${port}`);
   });
 }).catch(error => {
   logger.error({ message: 'Unable to connect to the database on startup', error: error.message });

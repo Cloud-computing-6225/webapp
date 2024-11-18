@@ -3,8 +3,9 @@ const {
   registerUser,
   getUserInfo,
   updateUser,
+  verifyEmail,
 } = require("../controllers/userController");
-const { basicAuth } = require("../middleware/auth");
+const { basicAuth,blockUnverifiedUsers } = require("../middleware/auth");
 const {checkParams,checkBodyContent}=require('../middleware/paramCheck')
 
 
@@ -34,7 +35,7 @@ router.all("/v1/user", (req, res) => {
 
 
 router.head("/v1/user/self",checkParams, (req, res) => {
-  return res
+  return re
     .status(405)
     .set({
       "Cache-Control": "no-cache",
@@ -45,7 +46,10 @@ router.head("/v1/user/self",checkParams, (req, res) => {
 
 router.get("/v1/user/self",checkParams,checkBodyContent, basicAuth, getUserInfo);
 
-router.put("/v1/user/self",checkParams, basicAuth, updateUser);
+
+router.get("/verify",verifyEmail);
+
+router.put("/v1/user/self",checkParams, basicAuth,blockUnverifiedUsers, updateUser);
 
 router.all("/v1/user/self", (req, res) => {
   return res
@@ -61,13 +65,13 @@ router.all("/v1/user/self", (req, res) => {
 
 
 // POST /v1/user/self/pic
-router.post("/v1/user/self/pic",basicAuth, upload.single('profilePic'), uploadProfileImage);
+router.post("/v1/user/self/pic",basicAuth,blockUnverifiedUsers, upload.single('profilePic'), uploadProfileImage);
 
 // GET /v1/user/self/pic
 router.get("/v1/user/self/pic",basicAuth, getProfileImage);
 
 // DELETE /v1/user/self/pic
-router.delete("/v1/user/self/pic",basicAuth, deleteProfileImage);
+router.delete("/v1/user/self/pic",basicAuth,blockUnverifiedUsers, deleteProfileImage);
 
 
 module.exports = router;
