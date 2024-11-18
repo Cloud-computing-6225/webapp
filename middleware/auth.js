@@ -44,4 +44,14 @@ const basicAuth = async (req, res, next) => {
     res.status(500).end();
   }
 };
-module.exports={basicAuth}
+
+const blockUnverifiedUsers = async (req, res, next) => {
+  const user = await User.findOne({ where: { id: req.user.id } });
+
+  if (!user || !user.email_verified) {
+    return res.status(403).json({ message: 'Email not verified' });
+  }
+  next();
+};
+
+module.exports={basicAuth,blockUnverifiedUsers}
