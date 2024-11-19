@@ -130,9 +130,11 @@ jobs:
 
       # Step 12: Conditionally create or update infrastructure
       - name: Create or Update Infrastructure
-        if: steps.check_launch_template.outputs.result != 'NOT_FOUND'
+        if: ${{ env.result != 'NOT_FOUND' }} 
         run: |
           # Launch template exists, update it
+          echo: ${{ steps.check_launch_template.outputs.result }}
+          echo: ${{ steps.check_launch_template }}
           aws ec2 create-launch-template-version \
             --launch-template-name "webapp_launch_template" \
             --source-version 1 \
@@ -148,7 +150,7 @@ jobs:
 
       # Step 13: Start Instance Refresh if infrastructure exists
       - name: Start Instance Refresh
-        if: steps.check_launch_template.outputs.result != 'NOT_FOUND'
+        if: ${{ env.result != 'NOT_FOUND' }} 
         id: start_refresh
         run: |
           REFRESH_ID=$(aws autoscaling start-instance-refresh \
@@ -164,7 +166,7 @@ jobs:
 
       # Step 14: Wait for Instance Refresh to Complete
       - name: Wait for Instance Refresh
-        if: steps.check_launch_template.outputs.result != 'NOT_FOUND'
+        if: ${{ env.result != 'NOT_FOUND' }} 
         run: |
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
