@@ -118,14 +118,15 @@ jobs:
       - name: Check Launch Template
         id: check_launch_template
         run: |
-          aws ec2 describe-launch-templates \
+          RESULT=$(aws ec2 describe-launch-templates \
             --launch-template-names "webapp_launch_template" \
-            --query "LaunchTemplates[0].LaunchTemplateId" --output text || echo "NOT_FOUND"
+            --query "LaunchTemplates[0].LaunchTemplateId" --output text || echo "NOT_FOUND")
+          echo "Result: $RESULT"
+          echo "result=$RESULT" >> $GITHUB_ENV  # Write the result to GITHUB_ENV
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
-        continue-on-error: true
 
       # Step 12: Conditionally create or update infrastructure
       - name: Create or Update Infrastructure
@@ -136,7 +137,7 @@ jobs:
             --launch-template-name "webapp_launch_template" \
             --source-version 1 \
             --version-description "Updated with latest AMI ID" \
-            --launch-template-data "{\"ImageId\":\"${{ env.ami_id }}\"}"
+            --launch-template-data "{\"ImageId\":\"${{ steps.get_ami.outputs.ami_id }}\"}"
           aws autoscaling update-auto-scaling-group \
             --auto-scaling-group-name "web-app-asg" \
             --launch-template "{\"LaunchTemplateName\":\"webapp_launch_template\",\"Version\":\"\$Latest\"}"
@@ -168,7 +169,7 @@ jobs:
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
               --auto-scaling-group-name "web-app-asg" \
-              --query "InstanceRefreshes[?InstanceRefreshId=='${{ env.refresh_id }}'].Status | [0]" \
+              --query "InstanceRefreshes[?InstanceRefreshId=='${{ steps.start_refresh.outputs.refresh_id }}'].Status | [0]" \
               --output text)
             echo "Instance Refresh Status: $STATUS"
             if [[ "$STATUS" == "Successful" ]]; then
