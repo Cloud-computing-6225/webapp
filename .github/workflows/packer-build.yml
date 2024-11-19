@@ -46,7 +46,7 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER}}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        run: npm test
+        run: NODE_ENV=test npm test 
 
       # # Step 4: Build the application artifact (zip)
       # - name: Build Application Artifact
