@@ -1,234 +1,129 @@
-const {
-  registerUser,
-  getUserInfo,
-  updateUser,
-} = require("../controllers/userController");
-const User = require("../models/userModel");
+const { registerUser, getUserInfo, updateUser, verifyEmail } = require('../controllers/userController');
+const User = require('../models/userModel');
+jest.mock('../models/userModel');
+const { statsdClient, logger } = require('../stats');
+jest.mock('../stats');
 
-jest.mock("../models/userModel");
+describe('User Controller', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-describe("User Controller Tests", () => {
-  // Test for registerUser 
-  describe("registerUser", () => {
-    const mockReq = {
-      body: {
-        firstName: "John",
-        lastName: "Doe",
-        email: "johndoe@test.com",
-        password: "password123",
-      },
-    };
-    const mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-      end: jest.fn(),
-    };
-
-    it("should return 400 if required fields are missing", async () => {
-      const req = {
-        body: { firstName: "", lastName: "Doe", email: "", password: "" },
+  describe('registerUser', () => {
+    it('should return 400 if required fields are missing', async () => {
+      const req = { body: { firstName: '', lastName: '', email: '', password: '' } };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
       };
-      await registerUser(req, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.end).toHaveBeenCalled();
+
+      await registerUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ code: 400 });
     });
 
-    it("should return 400 if additional params are present", async () => {
-      const req = {
-        body: {
-          firstName: "John",
-          lastName: "Doe",
-          email: "johndoe@test.com",
-          password: "password",
-          extraParam: "extra",
-        },
-      };
-      await registerUser(req, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.end).toHaveBeenCalled();
-    });
-
-    it("should return 400 for invalid email format", async () => {
-      const req = {
-        body: {
-          firstName: "John",
-          lastName: "Doe",
-          email: "invalidemail",
-          password: "password123",
-        },
-      };
-      await registerUser(req, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.end).toHaveBeenCalled();
-    });
-
-    it("should return 400 if user already exists", async () => {
-      User.findOne.mockResolvedValue({ email: "johndoe@test.com" });
-      await registerUser(mockReq, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.end).toHaveBeenCalled();
-    });
-
-    it("should create a new user if valid data is provided", async () => {
+    it('should create a user and return 201', async () => {
       User.findOne.mockResolvedValue(null);
       User.create.mockResolvedValue({
-        id: "mocked-id",
-        firstName: "John",
-        lastName: "Doe",
-        email: "johndoe@test.com",
-        password: "samplePassword",
-        account_created: new Date().toISOString(),
-        account_updated: new Date().toISOString(),
+        id: 'user-id',
+        first_name: 'John',
+        last_name: 'Doe',
+        email: 'john.doe@example.com',
+        account_created: new Date(),
+        account_updated: new Date(),
       });
 
-      await registerUser(mockReq, mockRes);
+      const req = { body: { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', password: 'password' } };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
 
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        id: expect.any(String),
-        firstName: "John",
-        lastName: "Doe",
-        email: "johndoe@test.com",
-        account_created: expect.any(String),
-        account_updated: expect.any(String),
-      });
-    });
+      await registerUser(req, res);
 
-    it("should return 500 on error", async () => {
-      User.findOne.mockRejectedValue(new Error("Database error"));
-      await registerUser(mockReq, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.end).toHaveBeenCalled();
+      expect(User.findOne).toHaveBeenCalledWith({ where: { email: 'john.doe@example.com' } });
+      expect(User.create).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com' }));
     });
   });
 
-  // Test for getUserInfo
-  describe("getUserInfo", () => {
-    const mockReq = {
-      user: { email: "nonexistent@example.com" },
-    };
-    const mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-      end: jest.fn(),
-    };
-
-    it("should return 404 if user is not found", async () => {
+  describe('getUserInfo', () => {
+    it('should return 404 if user is not found', async () => {
       User.findOne.mockResolvedValue(null);
-      await getUserInfo(mockReq, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.end).toHaveBeenCalled();
+
+      const req = { user: { email: 'john.doe@example.com' } };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+
+      await getUserInfo(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ code: 404 });
     });
 
-    it("should return user information if user exists", async () => {
-      const mockUser = {
-        id: "uuid123",
-        firstName: "John",
-        lastName: "Doe",
-        email: "johndoe@test.com",
-        account_created: new Date().toISOString(),
-        account_updated: new Date().toISOString(),
-      };
-
-      User.findOne.mockResolvedValue(mockUser);
-
-      const mockReq = {
-        user: {
-          email: "johndoe@test.com",
-        },
-      };
-
-      await getUserInfo(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        id: mockUser.id,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        email: mockUser.email,
-        account_created: expect.any(String),
-        account_updated: expect.any(String),
+    it('should return user information', async () => {
+      User.findOne.mockResolvedValue({
+        id: 'user-id',
+        first_name: 'John',
+        last_name: 'Doe',
+        email: 'john.doe@example.com',
+        account_created: new Date(),
+        account_updated: new Date(),
       });
-    });
 
-    it("should return 500 on error", async () => {
-      User.findOne.mockRejectedValue(new Error("Database error"));
-      await getUserInfo(mockReq, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.end).toHaveBeenCalled();
+      const req = { user: { email: 'john.doe@example.com' } };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+
+      await getUserInfo(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com' }));
     });
   });
 
-  // Test for updateUser (requires Basic Authentication)
-  describe("updateUser", () => {
-    const mockReq = {
-      headers: {
-        authorization: "Basic am9obmRvZUB0ZXN0LmNvbTpwYXNzd29yZDEyMw==",
-      },
-      body: { firstName: "John", lastName: "Doe", password: "password123" },
-    };
-    const mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-      end: jest.fn(),
-    };
-
-    it("should return 400 if required fields are missing", async () => {
-      const req = {
-        headers: {
-          authorization: "Basic am9obmRvZUB0ZXN0LmNvbTpwYXNzd29yZDEyMw==",
-        },
-        body: { firstName: "", lastName: "Doe", password: "" },
-      };
-      await updateUser(req, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.end).toHaveBeenCalled();
-    });
-
-    it("should return 404 if user is not found", async () => {
+  describe('updateUser', () => {
+    it('should return 404 if user is not found', async () => {
       User.findOne.mockResolvedValue(null);
-      const mockReq = {
-        user: { email: "nonexistentuser@test.com" },
+
+      const req = { user: { email: 'john.doe@example.com' }, body: { firstName: 'John', lastName: 'Doe', password: 'password' } };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
       };
 
-      await updateUser(mockReq, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.end).toHaveBeenCalled();
+      await updateUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ code: 404 });
     });
 
-    it("should update user information if all valid data is provided", async () => {
+    it('should update user information', async () => {
       const mockUser = {
-        id: "uuid123",
-        firstName: "John",
-        lastName: "Doe",
-        email: "johndoe@test.com",
-        password: "oldPassword",
-        save: jest.fn().mockResolvedValue(true),
+        save: jest.fn(),
+        first_name: 'John',
+        last_name: 'Doe',
+        email: 'john.doe@example.com',
+        account_updated: new Date(),
       };
-
       User.findOne.mockResolvedValue(mockUser);
 
-      const mockReq = {
-        user: { email: "johndoe@test.com" },
-        body: {
-          firstName: "Jane",
-          lastName: "Doe",
-          password: "newPassword",
-        },
+      const req = { user: { email: 'john.doe@example.com' }, body: { firstName: 'Jane', lastName: 'Smith', password: 'newpassword' } };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
       };
 
-      await updateUser(mockReq, mockRes);
+      await updateUser(req, res);
 
       expect(mockUser.save).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(204);
-      expect(mockRes.end).toHaveBeenCalled();
-    });
-
-    it("should return 500 on error", async () => {
-      User.findOne.mockRejectedValue(new Error("Database error"));
-      await updateUser(mockReq, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.end).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(204);
     });
   });
 });

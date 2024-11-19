@@ -2,6 +2,8 @@ const StatsD = require('node-statsd');
 const { createLogger, format, transports } = require('winston');
 const dotenv = require("dotenv");
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 dotenv.config();
 
 const logger = createLogger({
@@ -12,7 +14,8 @@ const logger = createLogger({
   ),
   transports: [
     new transports.Console(),
-    new transports.File({ filename: '/opt/webapp/app.log' })
+    // new transports.File({ filename: '/opt/webapp/app.log' })
+    ...(isTestEnv ? [] : [new transports.File({ filename: '/opt/webapp/app.log' })])
   ]
 });
 
