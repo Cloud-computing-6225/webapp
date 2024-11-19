@@ -9,44 +9,44 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # services:
-    #   mysql:
-    #     image: mysql:5.7
-    #     ports:
-    #       - 3306:3306
-    #     env:
-    #       MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-    #       MYSQL_DATABASE: ${{ secrets.DB_NAME }}                              
-    #       MYSQL_USER: ${{ secrets.DB_USER }}                                    
-    #       MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    services:
+      mysql:
+        image: mysql:5.7
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.DB_NAME }}                              
+          MYSQL_USER: ${{ secrets.DB_USER }}                                    
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
       # Step 1: Checkout the repository to get the webapp and packer folder
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # # Step 2: MySQL Health Check
-      # - name: Check for SQL to be healthy
-      #   run: |
-      #     for i in `seq 1 30`; do
-      #       if echo "SELECT 1" | mysql -h 127.0.0.1 -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_NAME }} ; then
-      #         echo "MySQL is ready!"
-      #         break
-      #       fi
-      #       echo "Waiting for MySQL..."
-      #       sleep 15
-      #     done
-      # - name: Install dependencies
-      #   run: npm install
-      # # Step 3: Running my tests
-      # - name: Running my tests
-      #   env:
-      #     DB_HOST: ${{ secrets.DB_HOST }}
-      #     DB_PORT: 3306
-      #     DB_NAME: ${{ secrets.DB_NAME }}
-      #     DB_USER: ${{ secrets.DB_USER}}
-      #     DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      #   run: npm test
+      # Step 2: MySQL Health Check
+      - name: Check for SQL to be healthy
+        run: |
+          for i in `seq 1 30`; do
+            if echo "SELECT 1" | mysql -h 127.0.0.1 -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_NAME }} ; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 15
+          done
+      - name: Install dependencies
+        run: npm install
+      # Step 3: Running my tests
+      - name: Running my tests
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: 3306
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER}}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: npm test
 
       # # Step 4: Build the application artifact (zip)
       # - name: Build Application Artifact
