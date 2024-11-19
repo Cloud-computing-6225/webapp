@@ -6,6 +6,9 @@ const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
 const { Sequelize } = require('sequelize');
 
+
+// Added a comment to create new ami
+
 const sns = new AWS.SNS({
   region: process.env.AWS_REGION, 
 });

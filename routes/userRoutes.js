@@ -44,7 +44,7 @@ router.head("/v1/user/self",checkParams, (req, res) => {
     .end();
 });
 
-router.get("/v1/user/self",checkParams,checkBodyContent, basicAuth, getUserInfo);
+router.get("/v1/user/self",checkParams,checkBodyContent, basicAuth,blockUnverifiedUsers, getUserInfo);
 
 
 router.get("/verify",verifyEmail);
@@ -68,7 +68,7 @@ router.all("/v1/user/self", (req, res) => {
 router.post("/v1/user/self/pic",basicAuth,blockUnverifiedUsers, upload.single('profilePic'), uploadProfileImage);
 
 // GET /v1/user/self/pic
-router.get("/v1/user/self/pic",basicAuth, getProfileImage);
+router.get("/v1/user/self/pic",basicAuth,blockUnverifiedUsers, getProfileImage);
 
 // DELETE /v1/user/self/pic
 router.delete("/v1/user/self/pic",basicAuth,blockUnverifiedUsers, deleteProfileImage);
