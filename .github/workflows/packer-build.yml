@@ -133,8 +133,6 @@ jobs:
         if: ${{ env.result != 'NOT_FOUND' }} 
         run: |
           # Launch template exists, update it
-          echo: ${{ steps.check_launch_template.outputs.result }}
-          echo: ${{ steps.check_launch_template }}
           aws ec2 create-launch-template-version \
             --launch-template-name "webapp_launch_template" \
             --source-version 1 \
