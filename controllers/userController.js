@@ -4,6 +4,7 @@ const User = require("../models/userModel");
 require('dotenv').config(); 
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
+const { Sequelize } = require('sequelize');
 
 const sns = new AWS.SNS({
   region: process.env.AWS_REGION, 
