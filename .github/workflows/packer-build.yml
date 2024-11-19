@@ -48,51 +48,51 @@ jobs:
       #     DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       #   run: npm test
 
-      # Step 4: Build the application artifact (zip)
-      - name: Build Application Artifact
-        run: |
-          zip -r app.zip . -x ".git/*" -x ".github/*"  # Creates the artifact
-          ls -al
-        env:
-          NODE_ENV: production
+      # # Step 4: Build the application artifact (zip)
+      # - name: Build Application Artifact
+      #   run: |
+      #     zip -r app.zip . -x ".git/*" -x ".github/*"  # Creates the artifact
+      #     ls -al
+      #   env:
+      #     NODE_ENV: production
 
-      # Step 5: Upload the artifact to GitHub Actions
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: app.zip  # This artifact will be passed to the Packer build
-          path: app.zip
+      # # Step 5: Upload the artifact to GitHub Actions
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: app.zip  # This artifact will be passed to the Packer build
+      #     path: app.zip
 
-      # Step 6: Download the built application artifact
-      - name: Download Application Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: app.zip
+      # # Step 6: Download the built application artifact
+      # - name: Download Application Artifact
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     name: app.zip
 
-      # Step 7: Move the artifact to the Packer folder
-      - name: Move Artifact to Packer Folder
-        run: |
-          ls -al
-          mv app.zip ./packer/  # Move the zipped artifact to the correct folder
+      # # Step 7: Move the artifact to the Packer folder
+      # - name: Move Artifact to Packer Folder
+      #   run: |
+      #     ls -al
+      #     mv app.zip ./packer/  # Move the zipped artifact to the correct folder
 
-      # Step 8: Set up Packer
-      - name: Set up Packer
-        uses: hashicorp/setup-packer@main
-        id: setup
-        with:
-          version: 1.11.2
+      # # Step 8: Set up Packer
+      # - name: Set up Packer
+      #   uses: hashicorp/setup-packer@main
+      #   id: setup
+      #   with:
+      #     version: 1.11.2
 
-      # Step 9: Run Packer to build the custom image
-      - name: Run Packer
-        working-directory: ./packer  # Ensure we are in the correct directory where the Packer files are
-        run: |
-          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      # # Step 9: Run Packer to build the custom image
+      # - name: Run Packer
+      #   working-directory: ./packer  # Ensure we are in the correct directory where the Packer files are
+      #   run: |
+      #     export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
         
     
-          # Initialize and run Packer build
-          packer init aws.pkr.hcl
-          packer build -var 'ami_users=${{ secrets.AMI_USERS }}' aws.pkr.hcl
+      #     # Initialize and run Packer build
+      #     packer init aws.pkr.hcl
+      #     packer build -var 'ami_users=${{ secrets.AMI_USERS }}' aws.pkr.hcl
 
       # Step 8: Fetch the latest shared AMI ID
       - name: Get Latest AMI ID
@@ -137,7 +137,7 @@ jobs:
             --launch-template-name "webapp_launch_template" \
             --source-version 1 \
             --version-description "Updated with latest AMI ID" \
-            --launch-template-data "{\"ImageId\":\"${{ steps.get_ami.outputs.ami_id }}\"}"
+            --launch-template-data "{\"ImageId\":\"${{env.ami_id}}\"}"
           aws autoscaling update-auto-scaling-group \
             --auto-scaling-group-name "web-app-asg" \
             --launch-template "{\"LaunchTemplateName\":\"webapp_launch_template\",\"Version\":\"\$Latest\"}"
@@ -169,7 +169,7 @@ jobs:
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
               --auto-scaling-group-name "web-app-asg" \
-              --query "InstanceRefreshes[?InstanceRefreshId=='${{ steps.start_refresh.outputs.refresh_id }}'].Status | [0]" \
+              --query "InstanceRefreshes[?InstanceRefreshId=='${{env.refresh_id }}'].Status | [0]" \
               --output text)
             echo "Instance Refresh Status: $STATUS"
             if [[ "$STATUS" == "Successful" ]]; then
