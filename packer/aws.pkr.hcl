@@ -57,7 +57,7 @@ variable "ami_users" {
 
 source "amazon-ebs" "my-ami" {
   region          = "${var.aws_region}"
-  ami_name        = "csye6225_f24_app_${formatdate("YYYY_MM_DD", timestamp())}"
+  ami_name        = "csye6225_f24_app_${formatdate("YYYY_MM_DD_HH_mm_ss", timestamp())}"
   ami_description = "AMI for CSYE-6225"
 
   ami_regions = [
