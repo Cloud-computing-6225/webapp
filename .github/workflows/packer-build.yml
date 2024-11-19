@@ -9,44 +9,44 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # services:
-    #   mysql:
-    #     image: mysql:5.7
-    #     ports:
-    #       - 3306:3306
-    #     env:
-    #       MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-    #       MYSQL_DATABASE: ${{ secrets.DB_NAME }}                              
-    #       MYSQL_USER: ${{ secrets.DB_USER }}                                    
-    #       MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    services:
+      mysql:
+        image: mysql:5.7
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.DB_NAME }}                              
+          MYSQL_USER: ${{ secrets.DB_USER }}                                    
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
       # Step 1: Checkout the repository to get the webapp and packer folder
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # # Step 2: MySQL Health Check
-      # - name: Check for SQL to be healthy
-      #   run: |
-      #     for i in `seq 1 30`; do
-      #       if echo "SELECT 1" | mysql -h 127.0.0.1 -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_NAME }} ; then
-      #         echo "MySQL is ready!"
-      #         break
-      #       fi
-      #       echo "Waiting for MySQL..."
-      #       sleep 15
-      #     done
-      # - name: Install dependencies
-      #   run: npm install
-      # # Step 3: Running my tests
-      # - name: Running my tests
-      #   env:
-      #     DB_HOST: ${{ secrets.DB_HOST }}
-      #     DB_PORT: 3306
-      #     DB_NAME: ${{ secrets.DB_NAME }}
-      #     DB_USER: ${{ secrets.DB_USER}}
-      #     DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      #   run: npm test
+      # Step 2: MySQL Health Check
+      - name: Check for SQL to be healthy
+        run: |
+          for i in `seq 1 30`; do
+            if echo "SELECT 1" | mysql -h 127.0.0.1 -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_NAME }} ; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 15
+          done
+      - name: Install dependencies
+        run: npm install
+      # Step 3: Running my tests
+      - name: Running my tests
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: 3306
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER}}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: npm test
 
       # # Step 4: Build the application artifact (zip)
       # - name: Build Application Artifact
@@ -94,95 +94,95 @@ jobs:
       #     packer init aws.pkr.hcl
       #     packer build -var 'ami_users=${{ secrets.AMI_USERS }}' aws.pkr.hcl
 
-      # Step 8: Fetch the latest shared AMI ID
-      - name: Get Latest AMI ID
-        id: get_ami
-        run: |
-          NEW_AMI_ID=$(aws ec2 describe-images \
-            --filters "Name=is-public,Values=false" \
-            --query "Images | sort_by(@, &CreationDate)[-1].ImageId" \
-            --output text)
-          if [[ -z "$NEW_AMI_ID" || "$NEW_AMI_ID" == "None" ]]; then
-            echo "No AMI found. Exiting workflow."
-            exit 1
-          fi
-          echo "Latest AMI ID: $NEW_AMI_ID"
-          echo "ami_id=$NEW_AMI_ID" >> $GITHUB_ENV
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+      # # Step 8: Fetch the latest shared AMI ID
+      # - name: Get Latest AMI ID
+      #   id: get_ami
+      #   run: |
+      #     NEW_AMI_ID=$(aws ec2 describe-images \
+      #       --filters "Name=is-public,Values=false" \
+      #       --query "Images | sort_by(@, &CreationDate)[-1].ImageId" \
+      #       --output text)
+      #     if [[ -z "$NEW_AMI_ID" || "$NEW_AMI_ID" == "None" ]]; then
+      #       echo "No AMI found. Exiting workflow."
+      #       exit 1
+      #     fi
+      #     echo "Latest AMI ID: $NEW_AMI_ID"
+      #     echo "ami_id=$NEW_AMI_ID" >> $GITHUB_ENV
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
+      #     AWS_REGION: ${{ secrets.AWS_REGION }}
 
 
-      # Step 11: Check if the Launch Template exists
-      - name: Check Launch Template
-        id: check_launch_template
-        run: |
-          RESULT=$(aws ec2 describe-launch-templates \
-            --launch-template-names "webapp_launch_template" \
-            --query "LaunchTemplates[0].LaunchTemplateId" --output text || echo "NOT_FOUND")
-          echo "Result: $RESULT"
-          echo "result=$RESULT" >> $GITHUB_ENV  # Write the result to GITHUB_ENV
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+      # # Step 11: Check if the Launch Template exists
+      # - name: Check Launch Template
+      #   id: check_launch_template
+      #   run: |
+      #     RESULT=$(aws ec2 describe-launch-templates \
+      #       --launch-template-names "webapp_launch_template" \
+      #       --query "LaunchTemplates[0].LaunchTemplateId" --output text || echo "NOT_FOUND")
+      #     echo "Result: $RESULT"
+      #     echo "result=$RESULT" >> $GITHUB_ENV  # Write the result to GITHUB_ENV
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
+      #     AWS_REGION: ${{ secrets.AWS_REGION }}
 
-      # Step 12: Conditionally create or update infrastructure
-      - name: Create or Update Infrastructure
-        if: ${{ env.result != 'NOT_FOUND' }} 
-        run: |
-          # Launch template exists, update it
-          aws ec2 create-launch-template-version \
-            --launch-template-name "webapp_launch_template" \
-            --source-version 1 \
-            --version-description "Updated with latest AMI ID" \
-            --launch-template-data "{\"ImageId\":\"${{env.ami_id}}\"}"
-          aws autoscaling update-auto-scaling-group \
-            --auto-scaling-group-name "web-app-asg" \
-            --launch-template "{\"LaunchTemplateName\":\"webapp_launch_template\",\"Version\":\"\$Latest\"}"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+      # # Step 12: Conditionally create or update infrastructure
+      # - name: Create or Update Infrastructure
+      #   if: ${{ env.result != 'NOT_FOUND' }} 
+      #   run: |
+      #     # Launch template exists, update it
+      #     aws ec2 create-launch-template-version \
+      #       --launch-template-name "webapp_launch_template" \
+      #       --source-version 1 \
+      #       --version-description "Updated with latest AMI ID" \
+      #       --launch-template-data "{\"ImageId\":\"${{env.ami_id}}\"}"
+      #     aws autoscaling update-auto-scaling-group \
+      #       --auto-scaling-group-name "web-app-asg" \
+      #       --launch-template "{\"LaunchTemplateName\":\"webapp_launch_template\",\"Version\":\"\$Latest\"}"
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
+      #     AWS_REGION: ${{ secrets.AWS_REGION }}
 
-      # Step 13: Start Instance Refresh if infrastructure exists
-      - name: Start Instance Refresh
-        if: ${{ env.result != 'NOT_FOUND' }} 
-        id: start_refresh
-        run: |
-          REFRESH_ID=$(aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name "web-app-asg" \
-            --preferences "{\"InstanceWarmup\":300,\"MinHealthyPercentage\":50}" \
-            --query "InstanceRefreshId" --output text)
-          echo "Instance Refresh ID: $REFRESH_ID"
-          echo "refresh_id=$REFRESH_ID" >> $GITHUB_ENV
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+      # # Step 13: Start Instance Refresh if infrastructure exists
+      # - name: Start Instance Refresh
+      #   if: ${{ env.result != 'NOT_FOUND' }} 
+      #   id: start_refresh
+      #   run: |
+      #     REFRESH_ID=$(aws autoscaling start-instance-refresh \
+      #       --auto-scaling-group-name "web-app-asg" \
+      #       --preferences "{\"InstanceWarmup\":300,\"MinHealthyPercentage\":50}" \
+      #       --query "InstanceRefreshId" --output text)
+      #     echo "Instance Refresh ID: $REFRESH_ID"
+      #     echo "refresh_id=$REFRESH_ID" >> $GITHUB_ENV
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
+      #     AWS_REGION: ${{ secrets.AWS_REGION }}
 
-      # Step 14: Wait for Instance Refresh to Complete
-      - name: Wait for Instance Refresh
-        if: ${{ env.result != 'NOT_FOUND' }} 
-        run: |
-          while true; do
-            STATUS=$(aws autoscaling describe-instance-refreshes \
-              --auto-scaling-group-name "web-app-asg" \
-              --query "InstanceRefreshes[?InstanceRefreshId=='${{env.refresh_id }}'].Status | [0]" \
-              --output text)
-            echo "Instance Refresh Status: $STATUS"
-            if [[ "$STATUS" == "Successful" ]]; then
-              echo "Instance refresh completed successfully."
-              break
-            elif [[ "$STATUS" == "Failed" ]]; then
-              echo "Instance refresh failed."
-              exit 1
-            fi
-            sleep 30
-          done
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+      # # Step 14: Wait for Instance Refresh to Complete
+      # - name: Wait for Instance Refresh
+      #   if: ${{ env.result != 'NOT_FOUND' }} 
+      #   run: |
+      #     while true; do
+      #       STATUS=$(aws autoscaling describe-instance-refreshes \
+      #         --auto-scaling-group-name "web-app-asg" \
+      #         --query "InstanceRefreshes[?InstanceRefreshId=='${{env.refresh_id }}'].Status | [0]" \
+      #         --output text)
+      #       echo "Instance Refresh Status: $STATUS"
+      #       if [[ "$STATUS" == "Successful" ]]; then
+      #         echo "Instance refresh completed successfully."
+      #         break
+      #       elif [[ "$STATUS" == "Failed" ]]; then
+      #         echo "Instance refresh failed."
+      #         exit 1
+      #       fi
+      #       sleep 30
+      #     done
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
+      #     AWS_REGION: ${{ secrets.AWS_REGION }}
 
