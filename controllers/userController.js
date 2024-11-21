@@ -6,6 +6,8 @@ const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
 const { Sequelize } = require('sequelize');
 
+// AMI 4 comment
+
 
 
 
