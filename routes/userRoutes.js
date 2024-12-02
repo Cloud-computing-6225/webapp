@@ -44,12 +44,12 @@ router.head("/v1/user/self",checkParams, (req, res) => {
     .end();
 });
 
-router.get("/v1/user/self",checkParams,checkBodyContent, basicAuth,blockUnverifiedUsers, getUserInfo);
+router.get("/v1/user/self", basicAuth,blockUnverifiedUsers,checkParams,checkBodyContent, getUserInfo);
 
 
 router.get("/verify",verifyEmail);
 
-router.put("/v1/user/self",checkParams, basicAuth,blockUnverifiedUsers, updateUser);
+router.put("/v1/user/self", basicAuth,blockUnverifiedUsers,checkParams, updateUser);
 
 router.all("/v1/user/self", (req, res) => {
   return res
