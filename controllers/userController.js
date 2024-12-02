@@ -9,6 +9,7 @@ const { Sequelize } = require('sequelize');
 
 // Added a comment to create new ami
 // Added a comment to create new ami creation
+// Added a comment to create new ami creation
 
 
 const sns = new AWS.SNS({
