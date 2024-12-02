@@ -78,8 +78,8 @@ source "amazon-ebs" "my-ami" {
     device_name           = "/dev/sda1"
     volume_size           = 8
     volume_type           = "gp2"
-    
-    kms_key_id  = aws_kms_key.ec2_kms_key.id 
+
+    kms_key_id = aws_kms_key.ec2_kms_key.id
   }
 
   #variable here to grant access to specified accounts
