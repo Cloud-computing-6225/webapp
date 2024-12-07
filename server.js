@@ -67,6 +67,35 @@ app.get("/healthz", async (req, res) => {
   }
 });
 
+app.get("/ci-cd", async (req, res) => {
+  statsdClient.increment('api.healthz.get.call_count');
+  const startApiTime = Date.now();
+
+  try {
+    logger.info({ message: 'GET request received on /healthz' });
+    await sequelize.authenticate();
+    logger.info({ message: 'Database connection successful on /healthz' });
+    res
+      .status(200)
+      .set({
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      })
+      .json({ code: 200 });
+  } catch (error) {
+    logger.error({ message: 'Database connection error on /healthz', error: error.message });
+    res
+      .status(503)
+      .set({
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      })
+      .json({ code: 503 });
+  } finally {
+    statsdClient.timing('api.healthz.get.response_time', Date.now() - startApiTime);
+  }
+});
+
 // Catch-all handler for invalid /healthz methods
 app.all("/healthz", (req, res) => {
   statsdClient.increment('api.healthz.invalid_method.call_count');
